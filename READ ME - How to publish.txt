@@ -1,0 +1,70 @@
+2434 (Church Fenton) Squadron - Training Hub
+============================================
+Publishing to Netlify
+
+
+WHAT TO DRAG
+  Drag THIS ENTIRE FOLDER onto app.netlify.com/drop
+  Not the files inside it, and not a zip. The whole folder.
+
+  Netlify serves index.html automatically, which is the Training Hub.
+
+
+THE STEPS
+  1. Go to  app.netlify.com/drop
+     No account needed to try it. You will want one to keep the URL.
+  2. Drag this folder onto the dashed drop area.
+  3. Wait about twenty seconds. You get a URL like
+        https://spontaneous-otter-4a1b2c.netlify.app
+  4. Rename it: Site configuration > Change site name > e.g. 2434sqn-nav
+     giving you  https://2434sqn-nav.netlify.app
+
+  That URL is now the squadron's training hub. Share it with cadets.
+
+
+IMPORTANT - DO THIS BEFORE CADETS USE IT
+  Straight after publishing, the hub runs on SAMPLE DATA. Anyone visiting can
+  sign in as anybody, and nothing they do is saved anywhere real.
+
+  To make it a working system:
+  1. Create a free project at supabase.com - choose the London (eu-west-2)
+     region, so cadet data stays in the UK.
+  2. In Supabase, open the SQL Editor, paste in the whole of hub-schema.sql
+     (it is in this folder) and press Run.
+  3. Read the note at the very bottom of hub-schema.sql - it tells you how to
+     make yourself the first staff account. This is the one step you have to do
+     by hand, because only staff can create staff and there are no staff yet.
+  4. Open the published hub, click SET UP THE DATABASE, and paste in the
+     Project URL and the anon public key from Supabase
+     (Project Settings > API).
+
+  Each person does step 4 once on their own device - the keys are stored in
+  that browser. If you would rather bake them in for everyone, tell me and I
+  will put them in the code instead, which is safe: the anon key is designed to
+  be public, and the security comes from the rules in hub-schema.sql.
+
+
+UPDATING LATER
+  Netlify > your site > Deploys > drag the folder on again. It replaces the
+  previous version. Cadet accounts and their work live in Supabase, not in
+  these files, so nothing is lost by redeploying.
+
+
+WHAT IS IN HERE
+  index.html          the Training Hub itself
+  hub-data.js         the only file that talks to the database
+  hub-schema.sql      paste this into Supabase (step 2 above)
+  support.js          framework the hub is built on
+  lessons/            the five lessons - slides pulled from the PowerPoints
+  anim/               the 18 animations, plus their own library page
+  media/              squadron crest
+
+  Every file must stay in the folder together.
+
+
+A NOTE ON CADET DATA
+  The hub deliberately stores as little as possible: a service number and a
+  display name. No dates of birth, no addresses. An email address is used once,
+  to check a cadet is who they say they are when they sign up, and is erased
+  automatically the moment they claim their account. Passwords are handled by
+  Supabase and never touch these files.

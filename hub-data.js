@@ -1,0 +1,335 @@
+/* ============================================================================
+   Training Hub - data layer
+   ----------------------------------------------------------------------------
+   Every call to the database goes through here. Nothing else in the app knows
+   whether it is talking to Supabase or to the demo store, which is what makes
+   swapping in the real backend a contained job.
+
+   Two modes:
+     LIVE  - a Supabase URL + anon key have been saved. Real accounts.
+     DEMO  - no config yet. Sample squadron, data kept in this browser only.
+              Every screen works so you can try it before setting up a database.
+   ============================================================================ */
+(function () {
+  const CFG_KEY = 'hub.supabase.config.v1';
+  const DEMO_KEY = 'hub.demo.state.v1';
+  const SUPA_CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+  const LOS = ['LO1', 'LO2', 'LO3', 'LO4', 'LO5'];
+
+  /* ---------------------------------------------------------------- config -- */
+  function readConfig() {
+    try {
+      const raw = localStorage.getItem(CFG_KEY);
+      if (!raw) return null;
+      const c = JSON.parse(raw);
+      return c && c.url && c.anonKey ? c : null;
+    } catch (e) { return null; }
+  }
+  function writeConfig(url, anonKey) {
+    url = (url || '').trim().replace(/\/+$/, '');
+    anonKey = (anonKey || '').trim();
+    if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url))
+      throw new Error('That does not look like a Supabase project URL. It should look like https://abcdefgh.supabase.co');
+    if (anonKey.length < 40)
+      throw new Error('That anon key looks too short - copy the whole "anon public" key.');
+    localStorage.setItem(CFG_KEY, JSON.stringify({ url, anonKey }));
+  }
+  function clearConfig() { localStorage.removeItem(CFG_KEY); }
+
+  /* ------------------------------------------------------------ demo store -- */
+  const DEMO_NAMES = [
+    ['Abbott', 'AC'], ['Bhandari', 'Cdt'], ['Clarke', 'Cdt'], ['Doyle', 'CWO'],
+    ['Ellery', 'Cdt'], ['Fenwick', 'Sgt'], ['Grewal', 'Cdt'], ['Hassan', 'Cpl'],
+    ['Iremonger', 'Cdt'], ['Jarvis', 'Cdt'], ['Kaur', 'Cdt'], ['Lowther', 'Cdt'],
+    ['Mbeki', 'Cdt'], ['Nolan', 'Cpl'], ['Okafor', 'Cdt'], ['Pryce', 'Cdt'],
+  ];
+  function seedDemo() {
+    const profiles = DEMO_NAMES.map((n, i) => ({
+      id: 'demo-' + i,
+      service_number: String(30411208 + i * 37),
+      display_name: n[1] + ' ' + n[0],
+      is_staff: i === 3,
+      flight: ['Ash', 'Beech', 'Cedar'][i % 3],
+    }));
+    profiles.push({ id: 'demo-me', service_number: '30499001', display_name: 'Fg Off Whitaker', is_staff: true, flight: null });
+    const progress = [], handouts = [], checks = [];
+    profiles.forEach((p, i) => {
+      if (p.id === 'demo-me') return;
+      const reached = Math.max(0, Math.min(5, Math.round(((i * 7) % 11) / 2)));
+      LOS.slice(0, reached).forEach(lo => {
+        progress.push({ cadet_id: p.id, lo, slide_index: 99, slide_count: 99, completed_at: new Date(Date.now() - i * 864e5).toISOString(), updated_at: new Date().toISOString() });
+        const sc = 3 + ((i * 3 + lo.charCodeAt(2)) % 3);
+        checks.push({ cadet_id: p.id, lo, score: sc, total: 5, wrong: [], taken_at: new Date(Date.now() - i * 864e5).toISOString() });
+      });
+      if (reached < 5) {
+        const lo = LOS[reached];
+        progress.push({ cadet_id: p.id, lo, slide_index: (i * 5) % 30, slide_count: 40, completed_at: null, updated_at: new Date().toISOString() });
+        for (let k = 0; k < (i % 4); k++)
+          handouts.push({ cadet_id: p.id, lo, prompt_key: lo.toLowerCase() + '-p' + (k + 1), answer: 'Sample answer from the lesson.', updated_at: new Date().toISOString() });
+      }
+    });
+    return { profiles, progress, handouts, checks, session: null };
+  }
+  function loadDemo() {
+    try {
+      const raw = localStorage.getItem(DEMO_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    const s = seedDemo();
+    saveDemo(s);
+    return s;
+  }
+  function saveDemo(s) { try { localStorage.setItem(DEMO_KEY, JSON.stringify(s)); } catch (e) {} }
+
+  /* ------------------------------------------------------------- live mode -- */
+  let _client = null;
+  async function client() {
+    const cfg = readConfig();
+    if (!cfg) return null;
+    if (_client) return _client;
+    const { createClient } = await import(SUPA_CDN);
+    _client = createClient(cfg.url, cfg.anonKey);
+    return _client;
+  }
+
+  /* ------------------------------------------------------------------- API -- */
+  const Hub = {
+    LOS,
+    mode() { return readConfig() ? 'live' : 'demo'; },
+    isLive() { return !!readConfig(); },
+    saveConfig: writeConfig,
+    clearConfig,
+    config: readConfig,
+
+    async connectionTest() {
+      const c = await client();
+      if (!c) throw new Error('No configuration saved.');
+      const { error } = await c.from('profiles').select('id', { count: 'exact', head: true });
+      if (error && !/permission|row-level/i.test(error.message)) throw new Error(error.message);
+      return true;
+    },
+
+    /* ---- session ---- */
+    async currentUser() {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        if (!d.session) return null;
+        return d.profiles.find(p => p.id === d.session) || null;
+      }
+      const c = await client();
+      const { data: { user } } = await c.auth.getUser();
+      if (!user) return null;
+      const { data } = await c.from('profiles').select('*').eq('id', user.id).maybeSingle();
+      if (!data) return { id: user.id, unclaimed: true, email: user.email };
+      return data;
+    },
+
+    async signIn(email, password) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        const p = d.profiles.find(x => x.service_number === String(email).trim()) || d.profiles.find(x => x.id === 'demo-me');
+        d.session = p.id; saveDemo(d);
+        return p;
+      }
+      const c = await client();
+      const { error } = await c.auth.signInWithPassword({ email: email.trim(), password });
+      if (error) throw new Error(friendly(error.message));
+      return await this.currentUser();
+    },
+
+    async signUp(email, password, serviceNumber, surname, displayName) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        const p = { id: 'demo-new-' + Date.now(), service_number: serviceNumber || '30499999',
+                    display_name: displayName || ('Cdt ' + (surname || 'New')), is_staff: false, flight: null };
+        d.profiles.push(p); d.session = p.id; saveDemo(d);
+        return p;
+      }
+      const c = await client();
+      const { error: sErr } = await c.auth.signUp({ email: email.trim(), password });
+      if (sErr) throw new Error(friendly(sErr.message));
+      // signUp may or may not return an active session depending on the project's
+      // email-confirmation setting; make sure we have one before claiming.
+      const { data: { session } } = await c.auth.getSession();
+      if (!session) {
+        const { error: iErr } = await c.auth.signInWithPassword({ email: email.trim(), password });
+        if (iErr) throw new Error('Account created, but it needs email confirmation before you can sign in. Check your inbox.');
+      }
+      return await this.claim(serviceNumber, surname, displayName);
+    },
+
+    async claim(serviceNumber, surname, displayName) {
+      const c = await client();
+      const { data, error } = await c.rpc('claim_account', {
+        p_service_number: serviceNumber, p_surname: surname, p_display_name: displayName || '',
+      });
+      if (error) throw new Error(error.message.replace(/^.*?:\s*/, ''));
+      return Array.isArray(data) ? data[0] : data;
+    },
+
+    async signOut() {
+      if (!this.isLive()) { const d = loadDemo(); d.session = null; saveDemo(d); return; }
+      const c = await client();
+      await c.auth.signOut();
+    },
+
+    async resetPassword(email) {
+      if (!this.isLive()) return true;
+      const c = await client();
+      const { error } = await c.auth.resetPasswordForEmail(email.trim());
+      if (error) throw new Error(error.message);
+      return true;
+    },
+
+    /* ---- people ---- */
+    async listProfiles() {
+      if (!this.isLive()) return loadDemo().profiles;
+      const c = await client();
+      const { data, error } = await c.from('profiles').select('*').order('display_name');
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+
+    async setStaff(cadetId, isStaff) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        const p = d.profiles.find(x => x.id === cadetId);
+        if (p) p.is_staff = !!isStaff;
+        saveDemo(d); return p;
+      }
+      const c = await client();
+      const { data, error } = await c.from('profiles').update({ is_staff: !!isStaff }).eq('id', cadetId).select().maybeSingle();
+      if (error) throw new Error(error.message.replace(/^.*?:\s*/, ''));
+      return data;
+    },
+
+    async listRoster() {
+      if (!this.isLive()) return [];
+      const c = await client();
+      const { data, error } = await c.from('roster').select('*').order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+
+    async addToRoster(row) {
+      if (!this.isLive()) throw new Error('Set up the database first - in demo mode there is nothing to add to.');
+      const c = await client();
+      const { data, error } = await c.from('roster').insert({
+        service_number: (row.service_number || '').trim(),
+        surname: (row.surname || '').trim(),
+        email: (row.email || '').trim().toLowerCase() || null,
+        flight: (row.flight || '').trim() || null,
+        intended_staff: !!row.intended_staff,
+      }).select().maybeSingle();
+      if (error) throw new Error(/duplicate/i.test(error.message)
+        ? 'That service number is already on the roster.' : error.message);
+      return data;
+    },
+
+    async removeFromRoster(id) {
+      const c = await client();
+      const { error } = await c.from('roster').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+    },
+
+    /* ---- progress ---- */
+    async listProgress() {
+      if (!this.isLive()) return loadDemo().progress;
+      const c = await client();
+      const { data, error } = await c.from('lesson_progress').select('*');
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+
+    async saveProgress(cadetId, lo, slideIndex, slideCount, completed) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        let r = d.progress.find(p => p.cadet_id === cadetId && p.lo === lo);
+        if (!r) { r = { cadet_id: cadetId, lo, started_at: new Date().toISOString() }; d.progress.push(r); }
+        r.slide_index = slideIndex; r.slide_count = slideCount;
+        r.updated_at = new Date().toISOString();
+        if (completed) r.completed_at = new Date().toISOString();
+        saveDemo(d); return r;
+      }
+      const c = await client();
+      const row = { cadet_id: cadetId, lo, slide_index: slideIndex, slide_count: slideCount, updated_at: new Date().toISOString() };
+      if (completed) row.completed_at = new Date().toISOString();
+      const { data, error } = await c.from('lesson_progress').upsert(row, { onConflict: 'cadet_id,lo' }).select().maybeSingle();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+
+    /* ---- handout ---- */
+    async listHandout(cadetId, lo) {
+      if (!this.isLive())
+        return loadDemo().handouts.filter(h => h.cadet_id === cadetId && (!lo || h.lo === lo));
+      const c = await client();
+      let q = c.from('handout_responses').select('*').eq('cadet_id', cadetId);
+      if (lo) q = q.eq('lo', lo);
+      const { data, error } = await q;
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+
+    async listAllHandout(lo) {
+      if (!this.isLive()) return loadDemo().handouts.filter(h => !lo || h.lo === lo);
+      const c = await client();
+      let q = c.from('handout_responses').select('*');
+      if (lo) q = q.eq('lo', lo);
+      const { data, error } = await q;
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+
+    async saveAnswer(cadetId, lo, promptKey, answer) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        let r = d.handouts.find(h => h.cadet_id === cadetId && h.lo === lo && h.prompt_key === promptKey);
+        if (!r) { r = { cadet_id: cadetId, lo, prompt_key: promptKey }; d.handouts.push(r); }
+        r.answer = answer; r.updated_at = new Date().toISOString();
+        saveDemo(d); return r;
+      }
+      const c = await client();
+      const { data, error } = await c.from('handout_responses').upsert(
+        { cadet_id: cadetId, lo, prompt_key: promptKey, answer, updated_at: new Date().toISOString() },
+        { onConflict: 'cadet_id,lo,prompt_key' }).select().maybeSingle();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+
+    /* ---- checks ---- */
+    async listChecks() {
+      if (!this.isLive()) return loadDemo().checks;
+      const c = await client();
+      const { data, error } = await c.from('check_results').select('*');
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+
+    async saveCheck(cadetId, lo, score, total, wrong) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        d.checks.push({ cadet_id: cadetId, lo, score, total, wrong: wrong || [], taken_at: new Date().toISOString() });
+        saveDemo(d); return;
+      }
+      const c = await client();
+      const { error } = await c.from('check_results').insert({ cadet_id: cadetId, lo, score, total, wrong: wrong || [] });
+      if (error) throw new Error(error.message);
+    },
+
+    /* ---- demo helpers ---- */
+    demoSignInAs(id) { const d = loadDemo(); d.session = id; saveDemo(d); },
+    resetDemo() { localStorage.removeItem(DEMO_KEY); },
+  };
+
+  function friendly(msg) {
+    if (/invalid login credentials/i.test(msg)) return 'That email or password is not right.';
+    if (/already registered/i.test(msg)) return 'There is already an account for that email. Try signing in.';
+    if (/password should be at least/i.test(msg)) return 'Password needs to be at least 6 characters.';
+    if (/rate limit|too many/i.test(msg)) return 'Too many attempts. Wait a minute and try again.';
+    return msg;
+  }
+
+  window.HubData = Hub;
+})();

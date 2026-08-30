@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #F4F1EA; -webkit-text-size-adjust: 100%; }
+  a { color: #E4572E; text-decoration: none; }
+  a:hover { color: #211F1B; }
+  * { box-sizing: border-box; }
+  input, textarea, button, select { font-family: inherit; }
+  textarea { resize: vertical; }
+  input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid #E4572E; outline-offset: 2px; }
+</style>
+<script src="./hub-data.js"></script>
+</helmet>
+
+<div style="min-height: 100vh; background: #F4F1EA; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #211F1B;">
+
+  <sc-if value="{{ booting }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+      <div style="font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.16em; color: #9A907C;">LOADING&hellip;</div>
+    </div>
+  </sc-if>
+
+  <!-- ==================== SIGN IN / SIGN UP ==================== -->
+  <sc-if value="{{ showAuth }}" hint-placeholder-val="{{ true }}">
+    <div style="min-height: 100vh; display: grid; grid-template-columns: 1fr; align-items: center; justify-items: center; padding: 40px 20px 70px;">
+      <div style="width: 100%; max-width: 470px;">
+
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font: 600 14px 'IBM Plex Mono', monospace; letter-spacing: 0.18em; color: #E4572E;">2434 SQN</div>
+          <h1 style="margin: 12px 0 8px; font-family: 'Source Serif 4', Georgia, serif; font-size: 33px; font-weight: 600; letter-spacing: -0.01em;">Training Hub</h1>
+          <p style="margin: 0; font-size: 15px; color: #6B6252;">Church Fenton &middot; Air Training Corps</p>
+        </div>
+
+        <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 11px; padding: 8px;">
+          <div style="display: flex; gap: 4px; padding: 4px; background: #F4F1EA; border-radius: 8px; margin-bottom: 20px;">
+            <button onClick="{{ tabIn }}" style="flex: 1; border: 0; cursor: pointer; padding: 12px; border-radius: 6px; font: 500 14px 'IBM Plex Sans', sans-serif; background: {{ tabInBg }}; color: {{ tabInCol }};">Sign in</button>
+            <button onClick="{{ tabUp }}" style="flex: 1; border: 0; cursor: pointer; padding: 12px; border-radius: 6px; font: 500 14px 'IBM Plex Sans', sans-serif; background: {{ tabUpBg }}; color: {{ tabUpCol }};">First time here</button>
+          </div>
+
+          <div style="padding: 0 16px 18px; display: flex; flex-direction: column; gap: 15px;">
+
+            <sc-if value="{{ isSignUp }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="font-size: 14px; line-height: 1.55; color: #6B6252; background: #F4F1EA; padding: 13px 15px; border-radius: 7px;">Your staff put you on the roster first. Enter the details they hold and pick a password.</div>
+                <label style="display: flex; flex-direction: column; gap: 7px;">
+                  <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">SERVICE NUMBER</span>
+                  <input value="{{ fService }}" onChange="{{ onService }}" inputMode="numeric" autoComplete="off" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 14px 14px; font-size: 16px; background: #FFFFFF; color: #211F1B;" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 7px;">
+                  <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">SURNAME</span>
+                  <input value="{{ fSurname }}" onChange="{{ onSurname }}" autoComplete="family-name" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 14px 14px; font-size: 16px; background: #FFFFFF; color: #211F1B;" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 7px;">
+                  <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">HOW YOU WANT TO BE SHOWN</span>
+                  <input value="{{ fDisplay }}" onChange="{{ onDisplay }}" placeholder="Cdt Bhandari" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 14px 14px; font-size: 16px; background: #FFFFFF; color: #211F1B;" />
+                </label>
+              </div>
+            </sc-if>
+
+            <label style="display: flex; flex-direction: column; gap: 7px;">
+              <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">{{ emailLabel }}</span>
+              <input value="{{ fEmail }}" onChange="{{ onEmail }}" type="{{ emailType }}" inputMode="{{ emailMode }}" autoComplete="username" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 14px 14px; font-size: 16px; background: #FFFFFF; color: #211F1B;" />
+            </label>
+
+            <label style="display: flex; flex-direction: column; gap: 7px;">
+              <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">PASSWORD</span>
+              <input value="{{ fPassword }}" onChange="{{ onPassword }}" onKeyDown="{{ onAuthKey }}" type="password" autoComplete="{{ pwAutoComplete }}" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 14px 14px; font-size: 16px; background: #FFFFFF; color: #211F1B;" />
+            </label>
+
+            <sc-if value="{{ hasAuthErr }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size: 14px; line-height: 1.5; color: #8C2F1B; background: #FBEDE9; border: 1px solid #F0CFC6; padding: 12px 14px; border-radius: 7px;">{{ authErr }}</div>
+            </sc-if>
+
+            <button onClick="{{ doAuth }}" style="border: 0; cursor: pointer; background: #211F1B; color: #F4F1EA; padding: 16px; border-radius: 8px; font: 500 16px 'IBM Plex Sans', sans-serif; margin-top: 4px;">{{ authBtnLabel }}</button>
+
+            <sc-if value="{{ isSignIn }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ doReset }}" style="border: 0; background: none; cursor: pointer; font-size: 14px; color: #6B6252; padding: 4px; text-align: center;">Forgotten your password?</button>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="margin-top: 22px; text-align: center; display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-size: 13px; color: #9A907C;">{{ modeNote }}</div>
+          <button onClick="{{ openSetup }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; color: #E4572E;">{{ setupLinkLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ==================== SETUP ==================== -->
+  <sc-if value="{{ showSetup }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height: 100vh; padding: 44px 20px 80px; display: flex; justify-content: center;">
+      <div style="width: 100%; max-width: 660px;">
+        <button onClick="{{ closeSetup }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.12em; color: #6B6252; padding: 0 0 22px;">&larr; BACK</button>
+        <h1 style="margin: 0 0 10px; font-family: 'Source Serif 4', Georgia, serif; font-size: 31px; font-weight: 600;">Connect the database</h1>
+        <p style="margin: 0 0 26px; font-size: 15px; line-height: 1.6; color: #6B6252;">Until this is done the hub runs on sample data in this browser only. Nothing is shared between devices and nothing is permanent.</p>
+
+        <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 10px; padding: 24px 26px; margin-bottom: 20px;">
+          <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C; margin-bottom: 16px;">ONE-TIME SETUP</div>
+          <ol style="margin: 0; padding-left: 22px; font-size: 15px; line-height: 1.75; color: #3F3A31;">
+            <li>Create a free project at <a href="https://supabase.com" target="_blank" rel="noreferrer">supabase.com</a> &mdash; choose the <strong>London (eu-west-2)</strong> region.</li>
+            <li>Open the SQL Editor, paste in the whole of <strong>hub-schema.sql</strong>, and run it.</li>
+            <li>Go to Project Settings &rsaquo; API and copy the two values below.</li>
+            <li>Follow the note at the bottom of the SQL file to make yourself the first staff account.</li>
+          </ol>
+        </div>
+
+        <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 10px; padding: 24px 26px; display: flex; flex-direction: column; gap: 17px;">
+          <label style="display: flex; flex-direction: column; gap: 7px;">
+            <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">PROJECT URL</span>
+            <input value="{{ setupUrl }}" onChange="{{ onSetupUrl }}" placeholder="https://abcdefgh.supabase.co" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 13px 14px; font: 400 14px 'IBM Plex Mono', monospace; background: #FFFFFF; color: #211F1B;" />
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 7px;">
+            <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">ANON PUBLIC KEY</span>
+            <textarea value="{{ setupKey }}" onChange="{{ onSetupKey }}" rows="3" placeholder="eyJhbGciOi..." style="border: 1px solid #E2DACA; border-radius: 7px; padding: 13px 14px; font: 400 13px 'IBM Plex Mono', monospace; background: #FFFFFF; color: #211F1B; line-height: 1.5;"></textarea>
+          </label>
+          <div style="font-size: 13px; line-height: 1.6; color: #6B6252;">The anon key is meant to be public &mdash; it names your project, it does not grant access. What protects the data is the security rules in the SQL file.</div>
+
+          <sc-if value="{{ hasSetupErr }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size: 14px; line-height: 1.5; color: #8C2F1B; background: #FBEDE9; border: 1px solid #F0CFC6; padding: 12px 14px; border-radius: 7px;">{{ setupErr }}</div>
+          </sc-if>
+          <sc-if value="{{ hasSetupOk }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size: 14px; line-height: 1.5; color: #2F5A33; background: #ECF3EC; border: 1px solid #CFE0D0; padding: 12px 14px; border-radius: 7px;">{{ setupOk }}</div>
+          </sc-if>
+
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button onClick="{{ saveSetup }}" style="border: 0; cursor: pointer; background: #211F1B; color: #F4F1EA; padding: 14px 22px; border-radius: 8px; font: 500 15px 'IBM Plex Sans', sans-serif;">Save and test</button>
+            <sc-if value="{{ isLive }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ disconnect }}" style="border: 1px solid #E2DACA; cursor: pointer; background: #FFFFFF; color: #8C2F1B; padding: 14px 22px; border-radius: 8px; font: 500 15px 'IBM Plex Sans', sans-serif;">Disconnect</button>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ==================== LESSON VIEWER ==================== -->
+  <sc-if value="{{ showLesson }}" hint-placeholder-val="{{ false }}">
+    <div style="height: 100vh; max-height: 100vh; overflow: hidden; background: #211F1B; display: flex; flex-direction: column;">
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 16px; height: 56px; background: #17150F; color: #F4F1EA; flex: 0 0 auto;">
+        <div style="display: flex; align-items: center; gap: 14px; min-width: 0;">
+          <button onClick="{{ closeLesson }}" style="border: 1px solid rgba(244,241,234,0.25); background: none; cursor: pointer; color: rgba(244,241,234,0.75); border-radius: 6px; padding: 9px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em;">&larr; EXIT</button>
+          <span style="font: 600 12px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #E4572E; flex: 0 0 auto;">{{ lessonLo }}</span>
+          <span style="font-size: 14px; opacity: 0.6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ lessonSlideLabel }}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex: 0 0 auto;">
+          <span style="font: 500 12px 'IBM Plex Mono', monospace; opacity: 0.55;">{{ slideCounter }}</span>
+          <button onClick="{{ toggleHandout }}" style="border: 0; cursor: pointer; background: {{ handoutBtnBg }}; color: {{ handoutBtnCol }}; border-radius: 7px; padding: 11px 16px; font: 500 14px 'IBM Plex Sans', sans-serif; min-height: 44px;">{{ handoutBtnLabel }}</button>
+        </div>
+      </div>
+
+      <div style="flex: 1 1 auto; display: flex; min-height: 0; overflow: hidden;">
+        <div style="flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; min-height: 0;">
+          <div style="flex: 1 1 auto; display: flex; align-items: center; justify-content: center; padding: 14px; min-height: 0; position: relative; overflow: hidden;">
+            {{ slideStage }}
+          </div>
+          <div style="flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 18px 20px;">
+            <button onClick="{{ prevSlide }}" style="border: 1px solid rgba(244,241,234,0.22); background: rgba(244,241,234,0.06); cursor: pointer; color: #F4F1EA; border-radius: 9px; padding: 15px 26px; font: 500 15px 'IBM Plex Sans', sans-serif; min-height: 52px; min-width: 116px;">&larr; Back</button>
+            <div style="flex: 1 1 auto; height: 5px; background: rgba(244,241,234,0.14); border-radius: 3px; overflow: hidden; max-width: 460px;">
+              <div style="height: 100%; width: {{ lessonPct }}; background: #E4572E;"></div>
+            </div>
+            <button onClick="{{ nextSlide }}" style="border: 0; background: #E4572E; cursor: pointer; color: #FFFFFF; border-radius: 9px; padding: 15px 26px; font: 500 15px 'IBM Plex Sans', sans-serif; min-height: 52px; min-width: 116px;">{{ nextLabel }}</button>
+          </div>
+        </div>
+
+        <sc-if value="{{ handoutOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 0 0 400px; width: 400px; height: 100%; background: #F4F1EA; border-left: 1px solid #3A352C; display: flex; flex-direction: column; min-height: 0; overflow: hidden;">
+            <div style="flex: 0 0 auto; padding: 20px 22px 14px; border-bottom: 1px solid #E2DACA;">
+              <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">YOUR HANDOUT</div>
+              <div style="font-size: 14px; line-height: 1.55; color: #6B6252; margin-top: 8px;">Answer in your own words as you go. Saves by itself. Your staff can see how far you have got.</div>
+            </div>
+            <div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 22px 26px;">
+              <sc-for list="{{ prompts }}" as="p" hint-placeholder-count="4">
+                <div style="padding: 18px 0; border-bottom: 1px solid #EFE9DA;">
+                  <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 10px;">
+                    <span style="font: 600 11px 'IBM Plex Mono', monospace; color: {{ p.dotCol }}; flex: 0 0 auto;">{{ p.num }}</span>
+                    <span style="font-size: 15px; line-height: 1.5; font-weight: 500; color: #211F1B;">{{ p.text }}</span>
+                  </div>
+                  <textarea value="{{ p.answer }}" onChange="{{ p.onChange }}" rows="4" placeholder="Your answer&hellip;" style="width: 100%; border: 1px solid #E2DACA; border-radius: 7px; padding: 12px 13px; font-size: 16px; line-height: 1.5; background: #FFFFFF; color: #211F1B;"></textarea>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 7px;">
+                    <button onClick="{{ p.onJump }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; color: #E4572E; padding: 2px 0;">{{ p.jumpLabel }}</button>
+                    <span style="font: 500 11px 'IBM Plex Mono', monospace; color: {{ p.stateCol }};">{{ p.stateLabel }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div data-rail="1" style="flex: 0 0 auto; display: flex; gap: 6px; overflow-x: auto; padding: 10px 14px; background: #17150F; border-top: 1px solid #2C271F;">
+        <sc-for list="{{ rail }}" as="r" hint-placeholder-count="12">
+          <button onClick="{{ r.onGo }}" title="{{ r.label }}" style="flex: 0 0 auto; cursor: pointer; width: 46px; height: 34px; border-radius: 5px; border: 2px solid {{ r.border }}; background: {{ r.bg }}; color: {{ r.col }}; font: 500 11px 'IBM Plex Mono', monospace; padding: 0;">{{ r.n }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ==================== MAIN APP ==================== -->
+  <sc-if value="{{ showApp }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 20px; height: 60px; background: #211F1B; color: #F4F1EA; position: sticky; top: 0; z-index: 10;">
+        <div style="display: flex; align-items: center; gap: 14px; min-width: 0;">
+          <span style="font: 600 14px 'IBM Plex Mono', monospace; letter-spacing: 0.16em; color: #E4572E; flex: 0 0 auto;">2434 SQN</span>
+          <span style="font-size: 15px; opacity: 0.55; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Training Hub</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px; flex: 0 0 auto;">
+          <sc-if value="{{ isDemo }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ openSetup }}" style="border: 1px solid rgba(228,87,46,0.5); background: rgba(228,87,46,0.14); cursor: pointer; color: #F0A08A; border-radius: 6px; padding: 7px 12px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; white-space: nowrap; flex: 0 0 auto;">SAMPLE DATA &middot; SET UP</button>
+          </sc-if>
+          <span style="font-size: 14px; opacity: 0.75; white-space: nowrap;">{{ userName }}</span>
+          <span style="font: 500 10px 'IBM Plex Mono', monospace; letter-spacing: 0.12em; padding: 4px 8px; border-radius: 4px; background: {{ roleBadgeBg }}; color: {{ roleBadgeCol }};">{{ roleBadge }}</span>
+          <button onClick="{{ doSignOut }}" style="border: 1px solid rgba(244,241,234,0.25); background: none; cursor: pointer; color: rgba(244,241,234,0.7); border-radius: 6px; padding: 8px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; min-height: 40px; white-space: nowrap; flex: 0 0 auto;">SIGN OUT</button>
+        </div>
+      </div>
+
+      <!-- ---------- STAFF ---------- -->
+      <sc-if value="{{ isStaff }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; align-items: flex-start;">
+          <div style="width: 226px; flex: 0 0 226px; min-height: calc(100vh - 60px); border-right: 1px solid #E2DACA; padding: 24px 14px; display: flex; flex-direction: column; gap: 4px; background: #FFFDF7;">
+            <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.16em; color: #9A907C; padding: 0 12px 12px;">SQUADRON</div>
+            <button onClick="{{ navDash }}" style="text-align: left; border: 0; cursor: pointer; padding: 13px 12px; border-radius: 6px; font: 500 14px 'IBM Plex Sans', sans-serif; background: {{ navDashBg }}; color: {{ navDashCol }}; min-height: 46px;">Overview</button>
+            <button onClick="{{ navLive }}" style="text-align: left; border: 0; cursor: pointer; padding: 13px 12px; border-radius: 6px; font: 500 14px 'IBM Plex Sans', sans-serif; background: {{ navLiveBg }}; color: {{ navLiveCol }}; min-height: 46px;">Live lesson</button>
+            <button onClick="{{ navCadets }}" style="text-align: left; border: 0; cursor: pointer; padding: 13px 12px; border-radius: 6px; font: 500 14px 'IBM Plex Sans', sans-serif; background: {{ navCadetsBg }}; color: {{ navCadetsCol }}; min-height: 46px;">People</button>
+            <button onClick="{{ navRes }}" style="text-align: left; border: 0; cursor: pointer; padding: 13px 12px; border-radius: 6px; font: 500 14px 'IBM Plex Sans', sans-serif; background: {{ navResBg }}; color: {{ navResCol }}; min-height: 46px;">Lessons</button>
+            <div style="margin-top: auto; padding: 14px 12px; border-top: 1px solid #E2DACA; font-size: 12px; line-height: 1.55; color: #9A907C;">{{ sidebarNote }}</div>
+          </div>
+
+          <div style="flex: 1 1 auto; min-width: 0; padding: 34px 40px 90px; max-width: 1220px;">
+
+            <!-- Overview -->
+            <sc-if value="{{ vDash }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-direction: column; gap: 28px;">
+                <div>
+                  <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.16em; color: #9A907C; margin-bottom: 8px;">FIRST CLASS &middot; BASIC NAVIGATION</div>
+                  <h1 style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 36px; font-weight: 600; letter-spacing: -0.01em;">Where the cohort is</h1>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 14px;">
+                  <div style="padding: 19px 21px; background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px;">
+                    <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">ON THE ROLL</div>
+                    <div style="font: 600 33px 'IBM Plex Mono', monospace; margin-top: 8px;">{{ statTotal }}</div>
+                  </div>
+                  <div style="padding: 19px 21px; background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px;">
+                    <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">FINISHED ALL FIVE</div>
+                    <div style="font: 600 33px 'IBM Plex Mono', monospace; margin-top: 8px; color: #4C7A4F;">{{ statDone }}</div>
+                  </div>
+                  <div style="padding: 19px 21px; background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px;">
+                    <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">MID-LESSON</div>
+                    <div style="font: 600 33px 'IBM Plex Mono', monospace; margin-top: 8px;">{{ statActive }}</div>
+                  </div>
+                  <div style="padding: 19px 21px; background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px;">
+                    <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">NOT STARTED</div>
+                    <div style="font: 600 33px 'IBM Plex Mono', monospace; margin-top: 8px; color: #B2442E;">{{ statNone }}</div>
+                  </div>
+                </div>
+                <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px; padding: 24px 26px 22px;">
+                  <h2 style="margin: 0 0 18px; font-family: 'Source Serif 4', Georgia, serif; font-size: 21px; font-weight: 600;">Progress by lesson</h2>
+                  <sc-for list="{{ lessonProgress }}" as="l" hint-placeholder-count="5">
+                    <div style="display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px;">
+                      <div style="display: flex; justify-content: space-between; gap: 12px; align-items: baseline;">
+                        <span style="font-size: 14px;"><span style="font: 500 12px 'IBM Plex Mono', monospace; color: #E4572E; margin-right: 8px;">{{ l.code }}</span>{{ l.short }}</span>
+                        <span style="font: 500 12px 'IBM Plex Mono', monospace; color: #9A907C; white-space: nowrap;">{{ l.label }}</span>
+                      </div>
+                      <div style="height: 7px; background: #EFE9DA; border-radius: 4px; overflow: hidden;">
+                        <div style="height: 100%; width: {{ l.w }}; background: #211F1B;"></div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- Live lesson -->
+            <sc-if value="{{ vLive }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap;">
+                  <div>
+                    <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.16em; color: #9A907C; margin-bottom: 8px;">DURING THE LESSON</div>
+                    <h1 style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 36px; font-weight: 600;">Who is keeping up</h1>
+                  </div>
+                  <div style="display: flex; gap: 8px; align-items: center;">
+                    <button onClick="{{ refreshLive }}" style="border: 1px solid #E2DACA; background: #FFFFFF; cursor: pointer; color: #211F1B; border-radius: 7px; padding: 11px 16px; font: 500 13px 'IBM Plex Sans', sans-serif; min-height: 44px;">{{ refreshLabel }}</button>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <sc-for list="{{ loTabs }}" as="t" hint-placeholder-count="5">
+                    <button onClick="{{ t.onPick }}" style="cursor: pointer; border: 1px solid {{ t.border }}; background: {{ t.bg }}; color: {{ t.col }}; border-radius: 7px; padding: 11px 18px; font: 500 13px 'IBM Plex Mono', monospace; letter-spacing: 0.06em; min-height: 44px;">{{ t.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px; overflow: hidden;">
+                  <div style="display: flex; align-items: center; gap: 16px; padding: 15px 22px; border-bottom: 1px solid #E2DACA; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.13em; color: #9A907C;">
+                    <span style="flex: 1 1 auto;">CADET</span>
+                    <span style="flex: 0 0 120px;">SLIDE</span>
+                    <span style="flex: 0 0 190px;">HANDOUT</span>
+                  </div>
+                  <sc-for list="{{ liveRows }}" as="r" hint-placeholder-count="8">
+                    <div style="display: flex; align-items: center; gap: 16px; padding: 15px 22px; border-bottom: 1px solid #EFE9DA;">
+                      <span style="flex: 1 1 auto; min-width: 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ r.name }}</span>
+                      <span style="flex: 0 0 120px; font: 500 13px 'IBM Plex Mono', monospace; color: {{ r.slideCol }};">{{ r.slideLabel }}</span>
+                      <span style="flex: 0 0 190px; display: flex; align-items: center; gap: 10px;">
+                        <span style="flex: 1 1 auto; height: 7px; background: #EFE9DA; border-radius: 4px; overflow: hidden;">
+                          <span style="display: block; height: 100%; width: {{ r.w }}; background: {{ r.barCol }};"></span>
+                        </span>
+                        <span style="flex: 0 0 auto; font: 500 12px 'IBM Plex Mono', monospace; color: #6B6252;">{{ r.answered }}</span>
+                      </span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="font-size: 13px; line-height: 1.6; color: #9A907C;">Cadets are told their handout is visible to staff. It shows how far they have got, not a mark.</div>
+              </div>
+            </sc-if>
+
+            <!-- People -->
+            <sc-if value="{{ vCadets }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div>
+                  <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.16em; color: #9A907C; margin-bottom: 8px;">ACCOUNTS</div>
+                  <h1 style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 36px; font-weight: 600;">People</h1>
+                </div>
+
+                <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px; padding: 24px 26px;">
+                  <h2 style="margin: 0 0 6px; font-family: 'Source Serif 4', Georgia, serif; font-size: 20px; font-weight: 600;">Put someone on the roster</h2>
+                  <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #6B6252;">They then sign up themselves and must match all three. The email is only used to check that, and is erased the moment they claim the account.</p>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; align-items: end;">
+                    <label style="display: flex; flex-direction: column; gap: 6px;">
+                      <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.13em; color: #9A907C;">SERVICE NUMBER</span>
+                      <input value="{{ rService }}" onChange="{{ onRService }}" inputMode="numeric" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 12px 13px; font-size: 15px; background: #FFFFFF; color: #211F1B;" />
+                    </label>
+                    <label style="display: flex; flex-direction: column; gap: 6px;">
+                      <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.13em; color: #9A907C;">SURNAME</span>
+                      <input value="{{ rSurname }}" onChange="{{ onRSurname }}" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 12px 13px; font-size: 15px; background: #FFFFFF; color: #211F1B;" />
+                    </label>
+                    <label style="display: flex; flex-direction: column; gap: 6px;">
+                      <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.13em; color: #9A907C;">EMAIL</span>
+                      <input value="{{ rEmail }}" onChange="{{ onREmail }}" type="email" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 12px 13px; font-size: 15px; background: #FFFFFF; color: #211F1B;" />
+                    </label>
+                    <label style="display: flex; flex-direction: column; gap: 6px;">
+                      <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.13em; color: #9A907C;">FLIGHT</span>
+                      <input value="{{ rFlight }}" onChange="{{ onRFlight }}" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 12px 13px; font-size: 15px; background: #FFFFFF; color: #211F1B;" />
+                    </label>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 18px; margin-top: 18px; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; min-height: 44px;">
+                      <input type="checkbox" checked="{{ rStaff }}" onChange="{{ onRStaff }}" style="width: 20px; height: 20px; accent-color: #E4572E; cursor: pointer;" />
+                      <span>Make them staff when they sign up</span>
+                    </label>
+                    <button onClick="{{ addRoster }}" style="border: 0; cursor: pointer; background: #211F1B; color: #F4F1EA; padding: 13px 22px; border-radius: 8px; font: 500 15px 'IBM Plex Sans', sans-serif; min-height: 46px;">Add to roster</button>
+                  </div>
+                  <sc-if value="{{ hasRosterMsg }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size: 14px; line-height: 1.5; color: {{ rosterMsgCol }}; background: {{ rosterMsgBg }}; border: 1px solid {{ rosterMsgBorder }}; padding: 12px 14px; border-radius: 7px; margin-top: 16px;">{{ rosterMsg }}</div>
+                  </sc-if>
+                </div>
+
+                <sc-if value="{{ hasWaiting }}" hint-placeholder-val="{{ false }}">
+                  <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px; overflow: hidden;">
+                    <div style="padding: 18px 24px 14px; border-bottom: 1px solid #E2DACA;">
+                      <h2 style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 20px; font-weight: 600;">On the roster, not signed up yet</h2>
+                    </div>
+                    <sc-for list="{{ waiting }}" as="w" hint-placeholder-count="3">
+                      <div style="display: flex; align-items: center; gap: 14px; padding: 14px 24px; border-bottom: 1px solid #EFE9DA;">
+                        <span style="flex: 0 0 auto; font: 500 13px 'IBM Plex Mono', monospace; color: #6B6252;">{{ w.service_number }}</span>
+                        <span style="flex: 1 1 auto; font-size: 15px;">{{ w.surname }}</span>
+                        <sc-if value="{{ w.intended_staff }}" hint-placeholder-val="{{ false }}">
+                          <span style="flex: 0 0 auto; font: 500 10px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; padding: 4px 8px; border-radius: 4px; background: #F2E3EF; color: #6B2560;">WILL BE STAFF</span>
+                        </sc-if>
+                        <button onClick="{{ w.onRemove }}" style="flex: 0 0 auto; border: 1px solid #E2DACA; background: #FFFFFF; cursor: pointer; color: #8C2F1B; border-radius: 6px; padding: 9px 14px; font: 500 13px 'IBM Plex Sans', sans-serif; min-height: 42px;">Remove</button>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px; overflow: hidden;">
+                  <div style="display: flex; align-items: center; gap: 16px; padding: 15px 22px; border-bottom: 1px solid #E2DACA; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.13em; color: #9A907C;">
+                    <span style="flex: 1 1 auto;">NAME</span>
+                    <span style="flex: 0 0 130px;">SERVICE NO</span>
+                    <span style="flex: 0 0 150px;">LESSONS DONE</span>
+                    <span style="flex: 0 0 100px; text-align: center;">STAFF</span>
+                  </div>
+                  <sc-for list="{{ people }}" as="p" hint-placeholder-count="8">
+                    <div style="display: flex; align-items: center; gap: 16px; padding: 14px 22px; border-bottom: 1px solid #EFE9DA;">
+                      <span style="flex: 1 1 auto; min-width: 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ p.display_name }}</span>
+                      <span style="flex: 0 0 130px; font: 500 13px 'IBM Plex Mono', monospace; color: #6B6252;">{{ p.service_number }}</span>
+                      <span style="flex: 0 0 150px; font: 500 13px 'IBM Plex Mono', monospace; color: #6B6252;">{{ p.doneLabel }}</span>
+                      <span style="flex: 0 0 100px; display: flex; justify-content: center;">
+                        <input type="checkbox" checked="{{ p.is_staff }}" onChange="{{ p.onToggle }}" disabled="{{ p.isSelf }}" title="{{ p.toggleTitle }}" style="width: 22px; height: 22px; accent-color: #E4572E; cursor: {{ p.toggleCursor }};" />
+                      </span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="font-size: 13px; line-height: 1.6; color: #9A907C;">You cannot change your own staff status &mdash; that rule is enforced by the database, not just hidden here.</div>
+              </div>
+            </sc-if>
+
+            <!-- Lessons -->
+            <sc-if value="{{ vRes }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div>
+                  <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.16em; color: #9A907C; margin-bottom: 8px;">FIRST CLASS &middot; BASIC NAVIGATION</div>
+                  <h1 style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 36px; font-weight: 600;">Lessons</h1>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+                  <sc-for list="{{ lessonCards }}" as="l" hint-placeholder-count="5">
+                    <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-top: 4px solid #E4572E; border-radius: 9px; padding: 22px 24px; display: flex; flex-direction: column; gap: 12px;">
+                      <div style="font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.12em; color: #E4572E;">{{ l.code }}</div>
+                      <div style="font-family: 'Source Serif 4', Georgia, serif; font-size: 21px; font-weight: 600; line-height: 1.25;">{{ l.title }}</div>
+                      <div style="font: 500 12px 'IBM Plex Mono', monospace; color: #9A907C;">{{ l.meta }}</div>
+                      <button onClick="{{ l.onOpen }}" style="margin-top: 6px; border: 0; cursor: pointer; background: #211F1B; color: #F4F1EA; padding: 13px 18px; border-radius: 7px; font: 500 14px 'IBM Plex Sans', sans-serif; min-height: 46px;">Present this lesson</button>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px; padding: 22px 26px;">
+                  <h2 style="margin: 0 0 10px; font-family: 'Source Serif 4', Georgia, serif; font-size: 19px; font-weight: 600;">The animations on their own</h2>
+                  <p style="margin: 0 0 4px; font-size: 14px; line-height: 1.6; color: #6B6252;">All eighteen sit inside the lessons at the right moment. The <a href="./anim/index.html" target="_blank" rel="noreferrer">separate library</a> is there for revision and for handing out.</p>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ---------- CADET ---------- -->
+      <sc-if value="{{ isCadet }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width: 900px; margin: 0 auto; padding: 34px 22px 90px;">
+          <div style="margin-bottom: 28px;">
+            <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.16em; color: #9A907C; margin-bottom: 8px;">FIRST CLASS &middot; BASIC NAVIGATION</div>
+            <h1 style="margin: 0 0 10px; font-family: 'Source Serif 4', Georgia, serif; font-size: 34px; font-weight: 600; letter-spacing: -0.01em;">{{ cadetGreeting }}</h1>
+            <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #6B6252;">{{ cadetSub }}</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <sc-for list="{{ lessonCards }}" as="l" hint-placeholder-count="5">
+              <button onClick="{{ l.onOpen }}" style="text-align: left; width: 100%; cursor: pointer; background: #FFFDF7; border: 1px solid #E2DACA; border-left: 5px solid {{ l.stateCol }}; border-radius: 9px; padding: 22px 24px; display: flex; align-items: center; gap: 20px; min-height: 92px;">
+                <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 7px;">
+                  <span style="font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.12em; color: #E4572E;">{{ l.code }}</span>
+                  <span style="font-family: 'Source Serif 4', Georgia, serif; font-size: 21px; font-weight: 600; line-height: 1.25; color: #211F1B;">{{ l.title }}</span>
+                  <span style="font: 500 12px 'IBM Plex Mono', monospace; color: #9A907C;">{{ l.meta }}</span>
+                </span>
+                <span style="flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                  <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; padding: 5px 10px; border-radius: 4px; background: {{ l.badgeBg }}; color: {{ l.badgeCol }};">{{ l.badge }}</span>
+                  <span style="font-size: 22px; color: #E4572E;">&rarr;</span>
+                </span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:860}}">
+const LOS = ['LO1','LO2','LO3','LO4','LO5'];
+const TITLES = { LO1:'Map skills', LO2:'The three norths', LO3:'Using a lightweight compass',
+                 LO4:'Land navigation methods', LO5:'Weather' };
+
+class Component extends DCLogic {
+  state = {
+    booting: true, mode: 'demo',
+    user: null, unclaimed: false,
+    authTab: 'in', authErr: '', authBusy: false,
+    fEmail: '', fPassword: '', fService: '', fSurname: '', fDisplay: '',
+    setupOpen: false, setupUrl: '', setupKey: '', setupErr: '', setupOk: '',
+    view: 'dash', liveLo: 'LO1', refreshing: false,
+    profiles: [], progress: [], handouts: [], roster: [],
+    lessonLo: null, lesson: null, slide: 0, handoutOpen: false, answers: {},
+    rService: '', rSurname: '', rEmail: '', rFlight: '', rStaff: false,
+    rosterMsg: '', rosterOk: false,
+  };
+
+  componentDidMount() { this.boot(); window.addEventListener('keydown', this.onKey); }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); }
+
+  onKey = (e) => {
+    if (!this.state.lesson) return;
+    if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+    if (e.key === 'ArrowRight') this.nav(1);
+    if (e.key === 'ArrowLeft') this.nav(-1);
+  };
+
+  async boot() {
+    const D = window.HubData;
+    if (!D) { this.setState({ booting: false }); return; }
+    const cfg = D.config();
+    let user = null;
+    try { user = await D.currentUser(); } catch (e) {}
+    this.setState({
+      booting: false, mode: D.mode(), user,
+      unclaimed: !!(user && user.unclaimed),
+      setupUrl: cfg ? cfg.url : '', setupKey: cfg ? cfg.anonKey : '',
+      view: user && user.is_staff ? 'dash' : 'dash',
+    }, () => { if (user && !user.unclaimed) this.loadAll(); });
+  }
+
+  async loadAll() {
+    const D = window.HubData;
+    try {
+      const [profiles, progress, handouts] = await Promise.all([
+        D.listProfiles(), D.listProgress(), D.listAllHandout(null),
+      ]);
+      let roster = [];
+      if (this.state.user && this.state.user.is_staff) {
+        try { roster = await D.listRoster(); } catch (e) {}
+      }
+      this.setState({ profiles, progress, handouts, roster });
+    } catch (e) {}
+  }
+
+  /* ---------------- auth ---------------- */
+  async doAuth() {
+    const s = this.state, D = window.HubData;
+    if (s.authBusy) return;
+    this.setState({ authBusy: true, authErr: '' });
+    try {
+      let user;
+      if (s.authTab === 'up') {
+        if (!s.fService.trim() || !s.fSurname.trim()) throw new Error('Service number and surname are both needed.');
+        user = await D.signUp(s.fEmail, s.fPassword, s.fService.trim(), s.fSurname.trim(), s.fDisplay.trim());
+      } else {
+        user = await D.signIn(s.fEmail, s.fPassword);
+      }
+      this.setState({ user, unclaimed: false, authBusy: false, fPassword: '' }, () => this.loadAll());
+    } catch (e) {
+      this.setState({ authBusy: false, authErr: e.message || String(e) });
+    }
+  }
+
+  async doReset() {
+    const D = window.HubData;
+    if (!this.state.fEmail.trim()) { this.setState({ authErr: 'Put your email in first, then tap this again.' }); return; }
+    try { await D.resetPassword(this.state.fEmail); this.setState({ authErr: 'Reset link sent. Check your email.' }); }
+    catch (e) { this.setState({ authErr: e.message }); }
+  }
+
+  async doSignOut() {
+    await window.HubData.signOut();
+    this.setState({ user: null, unclaimed: false, lesson: null, lessonLo: null, fPassword: '' });
+  }
+
+  /* ---------------- setup ---------------- */
+  async saveSetup() {
+    const D = window.HubData;
+    try {
+      D.saveConfig(this.state.setupUrl, this.state.setupKey);
+      this.setState({ setupErr: '', setupOk: 'Saved. Testing the connection\u2026' });
+      await D.connectionTest();
+      this.setState({ setupOk: 'Connected. Sign in with the staff account you made in the SQL editor.', mode: 'live', user: null });
+    } catch (e) {
+      this.setState({ setupErr: e.message, setupOk: '' });
+    }
+  }
+
+  disconnect() {
+    window.HubData.clearConfig();
+    this.setState({ mode: 'demo', setupOk: '', setupErr: '', user: null, setupOpen: false });
+  }
+
+  /* ---------------- roster ---------------- */
+  async addRoster() {
+    const s = this.state, D = window.HubData;
+    if (!s.rService.trim() || !s.rSurname.trim() || !s.rEmail.trim()) {
+      this.setState({ rosterMsg: 'Service number, surname and email are all needed \u2014 all three are what the cadet has to match.', rosterOk: false });
+      return;
+    }
+    try {
+      await D.addToRoster({ service_number: s.rService, surname: s.rSurname, email: s.rEmail, flight: s.rFlight, intended_staff: s.rStaff });
+      this.setState({ rService: '', rSurname: '', rEmail: '', rFlight: '', rStaff: false,
+        rosterMsg: s.rSurname.trim() + ' can now sign up.', rosterOk: true });
+      this.loadAll();
+    } catch (e) { this.setState({ rosterMsg: e.message, rosterOk: false }); }
+  }
+
+  async toggleStaff(id, next) {
+    try {
+      await window.HubData.setStaff(id, next);
+      this.setState({ profiles: this.state.profiles.map(p => p.id === id ? Object.assign({}, p, { is_staff: next }) : p) });
+    } catch (e) { alert(e.message); }
+  }
+
+  /* ---------------- lesson ---------------- */
+  async openLesson(lo) {
+    this.setState({ lessonLo: lo, lesson: null, slide: 0 });
+    try {
+      const res = await fetch('./lessons/' + lo + '.json');
+      const lesson = await res.json();
+      const mine = this.state.user && !this.state.user.unclaimed
+        ? await window.HubData.listHandout(this.state.user.id, lo) : [];
+      const answers = {};
+      mine.forEach(m => { answers[m.prompt_key] = m.answer; });
+      const prog = this.state.progress.find(p => p.cadet_id === (this.state.user||{}).id && p.lo === lo);
+      this.setState({ lesson, answers, slide: prog && !prog.completed_at ? Math.min(prog.slide_index || 0, lesson.slides.length - 1) : 0 });
+    } catch (e) {
+      this.setState({ lessonLo: null, lesson: null });
+      alert('Could not load that lesson.');
+    }
+  }
+
+  closeLesson() { this.setState({ lesson: null, lessonLo: null, handoutOpen: false }); this.loadAll(); }
+
+  nav(d) {
+    const s = this.state;
+    if (!s.lesson) return;
+    const n = Math.max(0, Math.min(s.lesson.slides.length - 1, s.slide + d));
+    if (n === s.slide) return;
+    this.setState({ slide: n });
+    this.pushProgress(n);
+  }
+
+  goSlide(n) { this.setState({ slide: n }); this.pushProgress(n); }
+
+  componentDidUpdate(_, prev) {
+    if (!this.state.lesson || prev.slide === this.state.slide) return;
+    const rail = document.querySelector('[data-rail]');
+    if (!rail) return;
+    const btn = rail.children[this.state.slide];
+    if (btn) {
+      const want = btn.offsetLeft - rail.clientWidth / 2 + btn.offsetWidth / 2;
+      rail.scrollTo({ left: Math.max(0, want), behavior: 'smooth' });
+    }
+  }
+
+  pushProgress(n) {
+    const s = this.state, u = s.user;
+    if (!u || u.unclaimed || !s.lesson) return;
+    clearTimeout(this._pt);
+    this._pt = setTimeout(() => {
+      window.HubData.saveProgress(u.id, s.lessonLo, n, s.lesson.slides.length, n >= s.lesson.slides.length - 1)
+        .catch(() => {});
+    }, 400);
+  }
+
+  setAnswer(key, val) {
+    const answers = Object.assign({}, this.state.answers, { [key]: val });
+    this.setState({ answers });
+    const u = this.state.user, lo = this.state.lessonLo;
+    if (!u || u.unclaimed) return;
+    clearTimeout(this._at ||= null);
+    this._saveTimers = this._saveTimers || {};
+    clearTimeout(this._saveTimers[key]);
+    this._saveTimers[key] = setTimeout(() => {
+      window.HubData.saveAnswer(u.id, lo, key, val).catch(() => {});
+    }, 700);
+  }
+
+  /* ---------------- render ---------------- */
+  renderVals() {
+    const s = this.state, u = s.user;
+    const isLive = s.mode === 'live';
+    const signedIn = !!u && !u.unclaimed;
+    const showSetup = s.setupOpen;
+    const showLesson = signedIn && !!s.lesson && !showSetup;
+    const showAuth = !s.booting && !showSetup && !signedIn;
+    const showApp = signedIn && !showLesson && !showSetup;
+    const isStaff = signedIn && !!u.is_staff;
+
+    const pill = (on) => on
+      ? { bg: '#211F1B', col: '#F4F1EA' }
+      : { bg: 'transparent', col: '#6B6252' };
+    const tIn = pill(s.authTab === 'in'), tUp = pill(s.authTab === 'up');
+
+    /* -- lesson stage -- */
+    let slideStage = null, rail = [], prompts = [], lessonSlideLabel = '', slideCounter = '', lessonPct = '0%';
+    if (s.lesson) {
+      const slides = s.lesson.slides, cur = slides[s.slide] || slides[0];
+      lessonSlideLabel = cur.label || '';
+      slideCounter = (s.slide + 1) + ' / ' + slides.length;
+      lessonPct = Math.round(((s.slide + 1) / slides.length) * 100) + '%';
+
+      if (cur.anim) {
+        slideStage = React.createElement('div', {
+          style: { width: '100%', height: '100%', minHeight: 0, maxWidth: 1400, display: 'flex', flexDirection: 'column',
+                   background: '#000', borderRadius: 10, overflow: 'hidden', border: '1px solid #3A352C' } },
+          React.createElement('iframe', {
+            key: cur.anim, src: './anim/' + encodeURIComponent(cur.anim), title: cur.label,
+            style: { width: '100%', height: '100%', border: 0, display: 'block', background: '#000' } }));
+      } else {
+        slideStage = React.createElement(SlideFrame, { key: s.slide, html: cur.html, bg: cur.bg });
+      }
+
+      rail = slides.map((sl, i) => ({
+        n: String(i + 1), label: sl.label || ('Slide ' + (i + 1)),
+        onGo: () => this.goSlide(i),
+        border: i === s.slide ? '#E4572E' : 'transparent',
+        bg: i === s.slide ? 'rgba(228,87,46,0.2)' : (sl.anim ? 'rgba(75,143,52,0.22)' : 'rgba(244,241,234,0.08)'),
+        col: i === s.slide ? '#F4F1EA' : 'rgba(244,241,234,0.6)',
+      }));
+
+      prompts = (s.lesson.prompts || []).map((p, i) => {
+        const val = s.answers[p.key] || '';
+        const done = val.trim().length > 3;
+        return {
+          num: String(i + 1).padStart(2, '0'), text: p.text, answer: val,
+          dotCol: done ? '#4C7A4F' : '#E4572E',
+          onChange: (e) => this.setAnswer(p.key, e.target.value),
+          onJump: () => this.goSlide(Math.min(p.afterSlide, s.lesson.slides.length - 1)),
+          jumpLabel: 'Slide ' + (p.afterSlide + 1),
+          stateLabel: done ? 'SAVED' : 'NOT ANSWERED',
+          stateCol: done ? '#4C7A4F' : '#9A907C',
+        };
+      });
+    }
+
+    /* -- lesson cards -- */
+    const myProg = {};
+    (s.progress || []).forEach(p => { if (p.cadet_id === (u||{}).id) myProg[p.lo] = p; });
+    const lessonCards = LOS.map(lo => {
+      const p = myProg[lo];
+      const done = p && p.completed_at;
+      const started = p && !done;
+      return {
+        code: lo, title: TITLES[lo],
+        meta: done ? 'Finished' : started ? ('Stopped at slide ' + ((p.slide_index || 0) + 1)) : 'Not started',
+        badge: done ? 'DONE' : started ? 'IN PROGRESS' : 'NEW',
+        badgeBg: done ? '#ECF3EC' : started ? '#FDF0E9' : '#F4F1EA',
+        badgeCol: done ? '#2F5A33' : started ? '#8C4A26' : '#6B6252',
+        stateCol: done ? '#4C7A4F' : started ? '#E4572E' : '#E2DACA',
+        onOpen: () => this.openLesson(lo),
+      };
+    });
+
+    /* -- staff stats -- */
+    const cadets = (s.profiles || []).filter(p => !p.is_staff);
+    const byCadet = {};
+    (s.progress || []).forEach(p => { (byCadet[p.cadet_id] = byCadet[p.cadet_id] || []).push(p); });
+    const doneCount = (id) => (byCadet[id] || []).filter(p => p.completed_at).length;
+    const statDone = cadets.filter(c => doneCount(c.id) >= 5).length;
+    const statActive = cadets.filter(c => (byCadet[c.id] || []).some(p => !p.completed_at)).length;
+    const statNone = cadets.filter(c => !(byCadet[c.id] || []).length).length;
+
+    const lessonProgress = LOS.map(lo => {
+      const n = cadets.filter(c => (byCadet[c.id] || []).some(p => p.lo === lo && p.completed_at)).length;
+      const pct = cadets.length ? Math.round((n / cadets.length) * 100) : 0;
+      return { code: lo, short: TITLES[lo], label: n + ' of ' + cadets.length, w: pct + '%' };
+    });
+
+    const people = (s.profiles || []).map(p => ({
+      id: p.id, display_name: p.display_name, service_number: p.service_number, is_staff: !!p.is_staff,
+      doneLabel: doneCount(p.id) + ' of 5',
+      isSelf: p.id === (u||{}).id,
+      toggleCursor: p.id === (u||{}).id ? 'not-allowed' : 'pointer',
+      toggleTitle: p.id === (u||{}).id ? 'You cannot change your own staff status' : 'Staff access',
+      onToggle: (e) => this.toggleStaff(p.id, e.target.checked),
+    }));
+
+    const waiting = (s.roster || []).filter(r => !r.claimed_by).map(r => ({
+      service_number: r.service_number, surname: r.surname, intended_staff: !!r.intended_staff,
+      onRemove: async () => { try { await window.HubData.removeFromRoster(r.id); this.loadAll(); } catch (e) { alert(e.message); } },
+    }));
+
+    /* -- live -- */
+    const promptTotals = { LO1: 4, LO2: 3, LO3: 6, LO4: 5, LO5: 4 };
+    const total = promptTotals[s.liveLo] || 4;
+    const liveRows = cadets.map(c => {
+      const answered = (s.handouts || []).filter(h => h.cadet_id === c.id && h.lo === s.liveLo && (h.answer || '').trim().length > 3).length;
+      const prog = (byCadet[c.id] || []).find(p => p.lo === s.liveLo);
+      const pct = Math.round((answered / total) * 100);
+      return {
+        name: c.display_name,
+        slideLabel: prog ? (prog.completed_at ? 'finished' : 'slide ' + ((prog.slide_index || 0) + 1)) : '\u2014',
+        slideCol: prog ? (prog.completed_at ? '#4C7A4F' : '#211F1B') : '#C9C0AC',
+        answered: answered + '/' + total, w: pct + '%',
+        barCol: pct >= 75 ? '#4C7A4F' : pct >= 30 ? '#E4572E' : '#C9C0AC',
+      };
+    });
+
+    const loTabs = LOS.map(lo => {
+      const on = s.liveLo === lo;
+      return { label: lo, onPick: () => this.setState({ liveLo: lo }),
+        bg: on ? '#211F1B' : '#FFFFFF', col: on ? '#F4F1EA' : '#6B6252',
+        border: on ? '#211F1B' : '#E2DACA' };
+    });
+
+    return {
+      booting: s.booting, showAuth, showApp, showSetup, showLesson,
+      isLive, isDemo: !isLive, isStaff, isCadet: signedIn && !isStaff,
+
+      /* auth */
+      isSignUp: s.authTab === 'up', isSignIn: s.authTab === 'in',
+      tabIn: () => this.setState({ authTab: 'in', authErr: '' }),
+      tabUp: () => this.setState({ authTab: 'up', authErr: '' }),
+      tabInBg: tIn.bg, tabInCol: tIn.col, tabUpBg: tUp.bg, tabUpCol: tUp.col,
+      fEmail: s.fEmail, fPassword: s.fPassword, fService: s.fService, fSurname: s.fSurname, fDisplay: s.fDisplay,
+      onEmail: (e) => this.setState({ fEmail: e.target.value }),
+      onPassword: (e) => this.setState({ fPassword: e.target.value }),
+      onService: (e) => this.setState({ fService: e.target.value }),
+      onSurname: (e) => this.setState({ fSurname: e.target.value }),
+      onDisplay: (e) => this.setState({ fDisplay: e.target.value }),
+      onAuthKey: (e) => { if (e.key === 'Enter') this.doAuth(); },
+      doAuth: () => this.doAuth(), doReset: () => this.doReset(),
+      authErr: s.authErr, hasAuthErr: !!s.authErr,
+      authBtnLabel: s.authBusy ? 'Working\u2026' : (s.authTab === 'up' ? 'Create my account' : 'Sign in'),
+      emailLabel: isLive ? 'EMAIL' : 'EMAIL (DEMO \u2014 ANY VALUE)',
+      emailType: 'email', emailMode: 'email',
+      pwAutoComplete: s.authTab === 'up' ? 'new-password' : 'current-password',
+      modeNote: isLive ? 'Connected to your squadron database.' : 'No database yet \u2014 running on sample data in this browser.',
+      setupLinkLabel: isLive ? 'DATABASE SETTINGS' : 'SET UP THE DATABASE',
+
+      /* setup */
+      openSetup: () => this.setState({ setupOpen: true, setupErr: '', setupOk: '' }),
+      closeSetup: () => this.setState({ setupOpen: false }),
+      setupUrl: s.setupUrl, setupKey: s.setupKey,
+      onSetupUrl: (e) => this.setState({ setupUrl: e.target.value }),
+      onSetupKey: (e) => this.setState({ setupKey: e.target.value }),
+      saveSetup: () => this.saveSetup(), disconnect: () => this.disconnect(),
+      setupErr: s.setupErr, hasSetupErr: !!s.setupErr, setupOk: s.setupOk, hasSetupOk: !!s.setupOk,
+
+      /* shell */
+      userName: signedIn ? u.display_name : '',
+      roleBadge: isStaff ? 'STAFF' : 'CADET',
+      roleBadgeBg: isStaff ? 'rgba(228,87,46,0.9)' : 'rgba(244,241,234,0.16)',
+      roleBadgeCol: isStaff ? '#FFFFFF' : 'rgba(244,241,234,0.8)',
+      doSignOut: () => this.doSignOut(),
+      sidebarNote: isLive ? 'Live data. Cadets are identified by service number and display name only.' : 'Sample data in this browser. Set up the database to go live.',
+
+      /* nav */
+      view: s.view,
+      navDash: () => this.setState({ view: 'dash' }), navLive: () => this.setState({ view: 'live' }),
+      navCadets: () => this.setState({ view: 'cadets' }), navRes: () => this.setState({ view: 'res' }),
+      vDash: s.view === 'dash', vLive: s.view === 'live', vCadets: s.view === 'cadets', vRes: s.view === 'res',
+      navDashBg: s.view === 'dash' ? '#F0EAD9' : 'transparent', navDashCol: s.view === 'dash' ? '#211F1B' : '#6B6252',
+      navLiveBg: s.view === 'live' ? '#F0EAD9' : 'transparent', navLiveCol: s.view === 'live' ? '#211F1B' : '#6B6252',
+      navCadetsBg: s.view === 'cadets' ? '#F0EAD9' : 'transparent', navCadetsCol: s.view === 'cadets' ? '#211F1B' : '#6B6252',
+      navResBg: s.view === 'res' ? '#F0EAD9' : 'transparent', navResCol: s.view === 'res' ? '#211F1B' : '#6B6252',
+
+      /* stats */
+      statTotal: String(cadets.length), statDone: String(statDone),
+      statActive: String(statActive), statNone: String(statNone),
+      lessonProgress, people, waiting, hasWaiting: waiting.length > 0,
+
+      /* live */
+      loTabs, liveRows,
+      refreshLive: () => { this.setState({ refreshing: true }); this.loadAll().then(() => this.setState({ refreshing: false })); },
+      refreshLabel: s.refreshing ? 'Refreshing\u2026' : 'Refresh',
+
+      /* roster form */
+      rService: s.rService, rSurname: s.rSurname, rEmail: s.rEmail, rFlight: s.rFlight, rStaff: s.rStaff,
+      onRService: (e) => this.setState({ rService: e.target.value }),
+      onRSurname: (e) => this.setState({ rSurname: e.target.value }),
+      onREmail: (e) => this.setState({ rEmail: e.target.value }),
+      onRFlight: (e) => this.setState({ rFlight: e.target.value }),
+      onRStaff: (e) => this.setState({ rStaff: e.target.checked }),
+      addRoster: () => this.addRoster(),
+      rosterMsg: s.rosterMsg, hasRosterMsg: !!s.rosterMsg,
+      rosterMsgCol: s.rosterOk ? '#2F5A33' : '#8C2F1B',
+      rosterMsgBg: s.rosterOk ? '#ECF3EC' : '#FBEDE9',
+      rosterMsgBorder: s.rosterOk ? '#CFE0D0' : '#F0CFC6',
+
+      /* lessons */
+      lessonCards,
+      cadetGreeting: signedIn ? 'Good to see you, ' + firstWordAfterRank(u.display_name) : '',
+      cadetSub: 'Five lessons. Work through the slides, answer the handout as you go, and the animations play where they fit.',
+
+      /* lesson viewer */
+      lessonLo: s.lessonLo || '', lessonSlideLabel, slideCounter, lessonPct, slideStage, rail, prompts,
+      prevSlide: () => this.nav(-1), nextSlide: () => this.nav(1),
+      nextLabel: s.lesson && s.slide >= s.lesson.slides.length - 1 ? 'Finish' : 'Next \u2192',
+      closeLesson: () => this.closeLesson(),
+      handoutOpen: s.handoutOpen,
+      toggleHandout: () => this.setState({ handoutOpen: !s.handoutOpen }),
+      handoutBtnLabel: s.handoutOpen ? 'Hide handout' : 'Handout',
+      handoutBtnBg: s.handoutOpen ? '#F4F1EA' : 'rgba(244,241,234,0.14)',
+      handoutBtnCol: s.handoutOpen ? '#211F1B' : '#F4F1EA',
+    };
+  }
+}
+
+function firstWordAfterRank(name) {
+  const parts = String(name || '').trim().split(/\s+/);
+  return parts.length > 1 ? parts.slice(1).join(' ') : (parts[0] || '');
+}
+
+/* Renders one 1920x1080 deck slide, scaled to fit its box. */
+const SlideFrame = (function () {
+  return function SlideFrame(props) {
+    const box = React.useRef(null);
+    const [scale, setScale] = React.useState(0.4);
+    React.useEffect(function () {
+      function fit() {
+        const el = box.current;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        setScale(Math.min(r.width / 1920, r.height / 1080));
+      }
+      fit();
+      window.addEventListener('resize', fit);
+      const t = setTimeout(fit, 60);
+      return function () { window.removeEventListener('resize', fit); clearTimeout(t); };
+    }, []);
+    // The scaled slide is positioned absolutely: transform: scale() does NOT
+    // reduce an element's layout box, so leaving a 1920x1080 div in flow would
+    // push the nav and rail off the bottom of the screen.
+    return React.createElement('div', {
+      ref: box,
+      style: { width: '100%', height: '100%', minHeight: 0, position: 'relative', overflow: 'hidden' } },
+      React.createElement('div', {
+        style: { width: 1920, height: 1080, position: 'absolute', top: '50%', left: '50%',
+                 transform: 'translate(-50%, -50%) scale(' + scale + ')',
+                 transformOrigin: 'center center', background: props.bg || '#fff',
+                 boxShadow: '0 10px 40px rgba(0,0,0,0.4)', overflow: 'hidden' },
+        dangerouslySetInnerHTML: { __html: props.html } }));
+  };
+})();
+
+</script>
+</body>
+</html>
