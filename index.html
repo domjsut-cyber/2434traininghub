@@ -91,10 +91,15 @@
           </div>
         </div>
 
-        <div style="margin-top: 22px; text-align: center; display: flex; flex-direction: column; gap: 10px;">
-          <div style="font-size: 13px; line-height: 1.5; color: #9A907C;">{{ modeNote }}</div>
-          <button onClick="{{ openSetup }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; color: #E4572E;">{{ setupLinkLabel }}</button>
-        </div>
+        <sc-if value="{{ showSetupLink }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top: 22px; text-align: center; display: flex; flex-direction: column; gap: 10px;">
+            <div style="font-size: 13px; line-height: 1.5; color: #9A907C;">{{ modeNote }}</div>
+            <button onClick="{{ openSetup }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; color: #E4572E;">SET UP THE DATABASE</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ hideSetupLink }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top: 24px; text-align: center; font-size: 13px; color: #B5AC97;">2434 (Church Fenton) Squadron</div>
+        </sc-if>
       </div>
     </div>
   </sc-if>
@@ -228,6 +233,10 @@
           <button onClick="{{ doSignOut }}" style="border: 1px solid rgba(244,241,234,0.25); background: none; cursor: pointer; color: rgba(244,241,234,0.7); border-radius: 6px; padding: 8px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; min-height: 40px; white-space: nowrap; flex: 0 0 auto;">SIGN OUT</button>
         </div>
       </div>
+
+      <sc-if value="{{ hasLoadErr }}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 14px 20px; background: #FBEDE9; border-bottom: 1px solid #F0CFC6; font-size: 14px; line-height: 1.5; color: #8C2F1B;">{{ loadErr }}</div>
+      </sc-if>
 
       <!-- ---------- STAFF ---------- -->
       <sc-if value="{{ isStaff }}" hint-placeholder-val="{{ true }}">
@@ -386,17 +395,17 @@
 
                 <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px; overflow: hidden;">
                   <div style="display: flex; align-items: center; gap: 16px; padding: 15px 22px; border-bottom: 1px solid #E2DACA; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.13em; color: #9A907C;">
-                    <span style="flex: 1 1 auto;">NAME</span>
-                    <span style="flex: 0 0 130px;">SERVICE NO</span>
-                    <span style="flex: 0 0 150px;">LESSONS DONE</span>
-                    <span style="flex: 0 0 100px; text-align: center;">STAFF</span>
+                    <span style="flex: 1 1 auto; min-width: 150px;">NAME</span>
+                    <span style="flex: 0 0 128px;">SERVICE NO</span>
+                    <span style="flex: 0 0 106px;">LESSONS</span>
+                    <span style="flex: 0 0 74px; text-align: center;">STAFF</span>
                   </div>
                   <sc-for list="{{ people }}" as="p" hint-placeholder-count="8">
                     <div style="display: flex; align-items: center; gap: 16px; padding: 14px 22px; border-bottom: 1px solid #EFE9DA;">
-                      <span style="flex: 1 1 auto; min-width: 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ p.display_name }}</span>
-                      <span style="flex: 0 0 130px; font: 500 13px 'IBM Plex Mono', monospace; color: #6B6252;">{{ p.service_number }}</span>
-                      <span style="flex: 0 0 150px; font: 500 13px 'IBM Plex Mono', monospace; color: #6B6252;">{{ p.doneLabel }}</span>
-                      <span style="flex: 0 0 100px; display: flex; justify-content: center;">
+                      <span style="flex: 1 1 auto; min-width: 150px; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ p.display_name }}</span>
+                      <span style="flex: 0 0 128px; font: 500 13px 'IBM Plex Mono', monospace; color: #6B6252; overflow: hidden; text-overflow: ellipsis;">{{ p.service_number }}</span>
+                      <span style="flex: 0 0 106px; font: 500 13px 'IBM Plex Mono', monospace; color: #6B6252;">{{ p.doneLabel }}</span>
+                      <span style="flex: 0 0 74px; display: flex; justify-content: center;">
                         <input type="checkbox" checked="{{ p.is_staff }}" onChange="{{ p.onToggle }}" disabled="{{ p.isSelf }}" title="{{ p.toggleTitle }}" style="width: 22px; height: 22px; accent-color: #E4572E; cursor: {{ p.toggleCursor }};" />
                       </span>
                     </div>
@@ -479,10 +488,18 @@ class Component extends DCLogic {
     profiles: [], progress: [], handouts: [], roster: [],
     lessonLo: null, lesson: null, slide: 0, handoutOpen: false, answers: {},
     rService: '', rSurname: '', rEmail: '', rFlight: '', rStaff: false,
-    rosterMsg: '', rosterOk: false,
+    rosterMsg: '', rosterOk: false, loadErr: '',
   };
 
-  componentDidMount() { this.boot(); window.addEventListener('keydown', this.onKey); }
+  componentDidMount() {
+    this.boot();
+    window.addEventListener('keydown', this.onKey);
+    // Escape hatch for staff: the setup screen is hidden once the site is
+    // configured, so ?setup=1 is how you get back to it to change or clear it.
+    try {
+      if (/[?&]setup=1/.test(window.location.search)) this.setState({ setupOpen: true });
+    } catch (e) {}
+  }
   componentWillUnmount() { window.removeEventListener('keydown', this.onKey); }
 
   onKey = (e) => {
@@ -516,8 +533,15 @@ class Component extends DCLogic {
       if (this.state.user && this.state.user.is_staff) {
         try { roster = await D.listRoster(); } catch (e) {}
       }
-      this.setState({ profiles, progress, handouts, roster });
-    } catch (e) {}
+      this.setState({ profiles, progress, handouts, roster, loadErr: '' });
+    } catch (e) {
+      // Never fail silently: a lapsed session used to leave the screen showing
+      // hour-old data while every write was refused, which is impossible to
+      // diagnose from the outside.
+      this.setState({ loadErr: e && e.sessionExpired
+        ? 'Your sign-in has lapsed. Sign out and back in - nothing is lost.'
+        : 'Could not reach the database: ' + ((e && e.message) || 'unknown error') });
+    }
   }
 
   /* ---------------- auth ---------------- */
@@ -809,7 +833,9 @@ class Component extends DCLogic {
       modeNote: isLive
         ? 'Connected to the squadron database.'
         : 'Sample data \u2014 sign in with anything to look around. To connect this site for everyone, fill in hub-config.js and re-publish.',
-      setupLinkLabel: isLive ? 'DATABASE SETTINGS' : 'SET UP THE DATABASE',
+      // Once the site carries its own config there is nothing for a visitor to
+      // set up, so the link is hidden. Staff can still reach it with ?setup=1.
+      showSetupLink: !isLive, hideSetupLink: isLive,
 
       /* setup */
       openSetup: () => this.setState({ setupOpen: true, setupErr: '', setupOk: '' }),
@@ -826,6 +852,7 @@ class Component extends DCLogic {
       roleBadgeBg: isStaff ? 'rgba(228,87,46,0.9)' : 'rgba(244,241,234,0.16)',
       roleBadgeCol: isStaff ? '#FFFFFF' : 'rgba(244,241,234,0.8)',
       doSignOut: () => this.doSignOut(),
+      hasLoadErr: !!s.loadErr, loadErr: s.loadErr,
       sidebarNote: isLive ? 'Live data. Cadets are identified by service number and display name only.' : 'Sample data in this browser. Set up the database to go live.',
 
       /* nav */

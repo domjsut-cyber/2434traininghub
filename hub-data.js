@@ -112,8 +112,29 @@
     if (!cfg) return null;
     if (_client) return _client;
     const { createClient } = await import(SUPA_CDN);
-    _client = createClient(cfg.url, cfg.anonKey);
+    _client = createClient(cfg.url, cfg.anonKey, {
+      auth: {
+        persistSession: true,      // survive a page reload
+        autoRefreshToken: true,    // renew the access token before it expires
+        detectSessionInUrl: true,  // needed for the password-reset link
+      },
+    });
     return _client;
+  }
+
+  /* Is there still a usable session? Called before writes, so an expired token
+     surfaces as "you have been signed out" rather than a confusing permissions
+     error from the database. */
+  async function requireSession() {
+    const c = await client();
+    if (!c) return null;
+    const { data: { session } } = await c.auth.getSession();
+    if (!session) {
+      const e = new Error('Your session has expired. Sign in again and your work is still saved.');
+      e.sessionExpired = true;
+      throw e;
+    }
+    return c;
   }
 
   /* ------------------------------------------------------------------- API -- */
@@ -237,7 +258,7 @@
 
     async addToRoster(row) {
       if (!this.isLive()) throw new Error('Set up the database first - in demo mode there is nothing to add to.');
-      const c = await client();
+      const c = await requireSession();
       const { data, error } = await c.from('roster').insert({
         service_number: (row.service_number || '').trim(),
         surname: (row.surname || '').trim(),
@@ -245,8 +266,12 @@
         flight: (row.flight || '').trim() || null,
         intended_staff: !!row.intended_staff,
       }).select().maybeSingle();
-      if (error) throw new Error(/duplicate/i.test(error.message)
-        ? 'That service number is already on the roster.' : error.message);
+      if (error) throw new Error(
+        /row-level security/i.test(error.message)
+          ? 'The database refused this. Your sign-in may have lapsed - sign out and back in, then try again.'
+          : /duplicate/i.test(error.message)
+            ? 'That service number is already on the roster.'
+            : error.message);
       return data;
     },
 

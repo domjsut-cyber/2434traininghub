@@ -44,9 +44,13 @@ IMPORTANT - DO THIS BEFORE CADETS USE IT
      the security rules, so putting it in a web page would expose every cadet's
      record. The hub refuses one if you try.
 
-     (There is also a SET UP THE DATABASE screen in the hub. That one only
+     (There is also a SET UP THE DATABASE screen in the hub, but it only
      affects the browser you type it into - handy for testing, no good for the
-     squadron. The file is the real answer.)
+     squadron. The file is the real answer.
+
+     Once hub-config.js is filled in, that screen disappears from the sign-in
+     page, so cadets never see it. If you ever need it again, add ?setup=1 to
+     the address, e.g.  https://your-site.netlify.app/?setup=1 )
 
 
 UPDATING LATER
