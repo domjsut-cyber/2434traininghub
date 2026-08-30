@@ -20,6 +20,7 @@
   textarea { resize: vertical; }
   input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid #E4572E; outline-offset: 2px; }
 </style>
+<script src="./hub-config.js"></script>
 <script src="./hub-data.js"></script>
 </helmet>
 
@@ -91,7 +92,7 @@
         </div>
 
         <div style="margin-top: 22px; text-align: center; display: flex; flex-direction: column; gap: 10px;">
-          <div style="font-size: 13px; color: #9A907C;">{{ modeNote }}</div>
+          <div style="font-size: 13px; line-height: 1.5; color: #9A907C;">{{ modeNote }}</div>
           <button onClick="{{ openSetup }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; color: #E4572E;">{{ setupLinkLabel }}</button>
         </div>
       </div>
@@ -104,7 +105,8 @@
       <div style="width: 100%; max-width: 660px;">
         <button onClick="{{ closeSetup }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.12em; color: #6B6252; padding: 0 0 22px;">&larr; BACK</button>
         <h1 style="margin: 0 0 10px; font-family: 'Source Serif 4', Georgia, serif; font-size: 31px; font-weight: 600;">Connect the database</h1>
-        <p style="margin: 0 0 26px; font-size: 15px; line-height: 1.6; color: #6B6252;">Until this is done the hub runs on sample data in this browser only. Nothing is shared between devices and nothing is permanent.</p>
+        <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6; color: #6B6252;">Until this is done the hub runs on sample data in this browser only. Nothing is shared between devices and nothing is permanent.</p>
+        <div style="font-size: 14px; line-height: 1.65; color: #6B4A1E; background: #FBF3E4; border: 1px solid #EBDCBE; padding: 14px 16px; border-radius: 8px; margin-bottom: 26px;"><strong>For the whole squadron, do it in the file instead.</strong> What you type here applies to <em>this browser only</em> &mdash; useful for testing, but it would mean every cadet setting up their own. To connect the site once for everyone, put the same two values into <strong>hub-config.js</strong> and re-publish.</div>
 
         <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 10px; padding: 24px 26px; margin-bottom: 20px;">
           <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C; margin-bottom: 16px;">ONE-TIME SETUP</div>
@@ -122,10 +124,11 @@
             <input value="{{ setupUrl }}" onChange="{{ onSetupUrl }}" placeholder="https://abcdefgh.supabase.co" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 13px 14px; font: 400 14px 'IBM Plex Mono', monospace; background: #FFFFFF; color: #211F1B;" />
           </label>
           <label style="display: flex; flex-direction: column; gap: 7px;">
-            <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">ANON PUBLIC KEY</span>
-            <textarea value="{{ setupKey }}" onChange="{{ onSetupKey }}" rows="3" placeholder="eyJhbGciOi..." style="border: 1px solid #E2DACA; border-radius: 7px; padding: 13px 14px; font: 400 13px 'IBM Plex Mono', monospace; background: #FFFFFF; color: #211F1B; line-height: 1.5;"></textarea>
+            <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">PUBLISHABLE KEY</span>
+            <textarea value="{{ setupKey }}" onChange="{{ onSetupKey }}" rows="3" placeholder="sb_publishable_..." style="border: 1px solid #E2DACA; border-radius: 7px; padding: 13px 14px; font: 400 13px 'IBM Plex Mono', monospace; background: #FFFFFF; color: #211F1B; line-height: 1.5;"></textarea>
           </label>
-          <div style="font-size: 13px; line-height: 1.6; color: #6B6252;">The anon key is meant to be public &mdash; it names your project, it does not grant access. What protects the data is the security rules in the SQL file.</div>
+          <div style="font-size: 13px; line-height: 1.6; color: #6B6252;">In Supabase this is under <strong>Project Settings &rsaquo; API Keys</strong>, labelled <strong>Publishable key</strong> &mdash; the one it says is safe to share. It names your project; it does not grant access. What protects the data is the security rules in the SQL file.</div>
+          <div style="font-size: 13px; line-height: 1.6; color: #8C2F1B; background: #FBEDE9; border: 1px solid #F0CFC6; padding: 12px 14px; border-radius: 7px;">Never paste a <strong>secret key</strong> here. Secret keys ignore the security rules, so putting one in a web page would expose every cadet&rsquo;s record to anyone who looked. The hub will refuse one.</div>
 
           <sc-if value="{{ hasSetupErr }}" hint-placeholder-val="{{ false }}">
             <div style="font-size: 14px; line-height: 1.5; color: #8C2F1B; background: #FBEDE9; border: 1px solid #F0CFC6; padding: 12px 14px; border-radius: 7px;">{{ setupErr }}</div>
@@ -803,7 +806,9 @@ class Component extends DCLogic {
       emailLabel: isLive ? 'EMAIL' : 'EMAIL (DEMO \u2014 ANY VALUE)',
       emailType: 'email', emailMode: 'email',
       pwAutoComplete: s.authTab === 'up' ? 'new-password' : 'current-password',
-      modeNote: isLive ? 'Connected to your squadron database.' : 'No database yet \u2014 running on sample data in this browser.',
+      modeNote: isLive
+        ? 'Connected to the squadron database.'
+        : 'Sample data \u2014 sign in with anything to look around. To connect this site for everyone, fill in hub-config.js and re-publish.',
       setupLinkLabel: isLive ? 'DATABASE SETTINGS' : 'SET UP THE DATABASE',
 
       /* setup */

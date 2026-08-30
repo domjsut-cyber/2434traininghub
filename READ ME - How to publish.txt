@@ -34,14 +34,19 @@ IMPORTANT - DO THIS BEFORE CADETS USE IT
   3. Read the note at the very bottom of hub-schema.sql - it tells you how to
      make yourself the first staff account. This is the one step you have to do
      by hand, because only staff can create staff and there are no staff yet.
-  4. Open the published hub, click SET UP THE DATABASE, and paste in the
-     Project URL and the anon public key from Supabase
-     (Project Settings > API).
+  4. Open hub-config.js in this folder with Notepad and fill in the two
+     values - the Project URL and the PUBLISHABLE key from
+     Project Settings > API Keys. Save it, then re-publish the folder.
 
-  Each person does step 4 once on their own device - the keys are stored in
-  that browser. If you would rather bake them in for everyone, tell me and I
-  will put them in the code instead, which is safe: the anon key is designed to
-  be public, and the security comes from the rules in hub-schema.sql.
+     That connects the site once, for everyone. Cadets do nothing.
+
+     Use the publishable key, never the secret key. The secret key ignores all
+     the security rules, so putting it in a web page would expose every cadet's
+     record. The hub refuses one if you try.
+
+     (There is also a SET UP THE DATABASE screen in the hub. That one only
+     affects the browser you type it into - handy for testing, no good for the
+     squadron. The file is the real answer.)
 
 
 UPDATING LATER

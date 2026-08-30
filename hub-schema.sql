@@ -5,13 +5,14 @@
 --  HOW TO USE
 --    1. Create a project at supabase.com  (free tier, choose London / eu-west-2)
 --    2. SQL Editor > New query > paste this whole file > Run
---    3. Project Settings > API > copy the Project URL and the anon public key
+--    3. Project Settings > API Keys > copy the Project URL and the PUBLISHABLE key
 --    4. Open the Training Hub, click Setup, paste those two values
 --
 --  A NOTE ON SECURITY
---    The anon key is designed to be public - it identifies the project, it does
---    not grant access. All protection comes from the Row Level Security (RLS)
---    policies below. Every table has RLS enabled and denies by default; the
+--    The publishable key is designed to be public - it identifies the project,
+--    it does not grant access. All protection comes from the Row Level Security
+--    (RLS) policies below. NEVER put a secret key in the web app: secret keys
+--    bypass every policy here. Every table has RLS enabled and denies by default; the
 --    policies then open up only what each role legitimately needs.
 --
 --    In particular: a cadet CANNOT make themselves staff. That is enforced by a

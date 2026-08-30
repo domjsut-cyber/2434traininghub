@@ -17,22 +17,45 @@
 
   const LOS = ['LO1', 'LO2', 'LO3', 'LO4', 'LO5'];
 
-  /* ---------------------------------------------------------------- config -- */
+  /* ---------------------------------------------------------------- config --
+     Two sources, in order:
+       1. hub-config.js  - set once, applies to everyone who opens the site
+       2. localStorage   - set per-device via the Setup screen
+     A device-level setting wins, so anyone can point their own browser at a
+     test project without disturbing the squadron's.
+     -------------------------------------------------------------------------- */
+  function siteConfig() {
+    const c = window.HUB_CONFIG;
+    if (!c) return null;
+    const url = (c.url || '').trim().replace(/\/+$/, '');
+    const key = (c.publishableKey || c.anonKey || '').trim();
+    if (!url || !key) return null;
+    return { url, anonKey: key, fromSite: true };
+  }
   function readConfig() {
     try {
       const raw = localStorage.getItem(CFG_KEY);
-      if (!raw) return null;
-      const c = JSON.parse(raw);
-      return c && c.url && c.anonKey ? c : null;
-    } catch (e) { return null; }
+      if (raw) {
+        const c = JSON.parse(raw);
+        if (c && c.url && c.anonKey) return c;
+      }
+    } catch (e) {}
+    return siteConfig();
   }
   function writeConfig(url, anonKey) {
     url = (url || '').trim().replace(/\/+$/, '');
     anonKey = (anonKey || '').trim();
     if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url))
       throw new Error('That does not look like a Supabase project URL. It should look like https://abcdefgh.supabase.co');
+    // Guard against pasting a secret key into a browser app. A secret key
+    // bypasses row-level security entirely, so it would hand every cadet's
+    // record to anyone who viewed the page source.
+    if (/^sb_secret_/i.test(anonKey) || /service_role/i.test(anonKey))
+      throw new Error('That is a SECRET key - never use it here. It bypasses all the security rules. Copy the publishable key instead (the one Supabase says is safe to share).');
     if (anonKey.length < 40)
-      throw new Error('That anon key looks too short - copy the whole "anon public" key.');
+      throw new Error('That key looks too short - copy the whole publishable key.');
+    if (!/^sb_publishable_/i.test(anonKey) && !/^eyJ/.test(anonKey))
+      throw new Error('That does not look like a publishable key. It should start with sb_publishable_ (or eyJ if it is an older project).');
     localStorage.setItem(CFG_KEY, JSON.stringify({ url, anonKey }));
   }
   function clearConfig() { localStorage.removeItem(CFG_KEY); }
