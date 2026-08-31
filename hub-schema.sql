@@ -309,8 +309,17 @@ create policy checks_read on public.check_results
 --  2. Sign up in the Training Hub with exactly those details.
 --  3. You are now staff and can add everyone else from the Cadets screen.
 --
---  If you ever lock yourself out, you can force it here:
+--  IF YOU LOCK YOURSELF OUT
+--    The guard trigger below fires for everyone - including this SQL editor,
+--    where auth.uid() is null, so is_staff() is false and a plain UPDATE is
+--    refused. Switch the trigger off for the one statement:
+--
+--       begin;
+--       alter table public.profiles disable trigger trg_guard_is_staff;
 --       update public.profiles set is_staff = true
 --        where service_number = 'YOUR_SERVICE_NO';
---  (The trigger does not apply to the SQL editor, which runs as the owner.)
+--       alter table public.profiles enable trigger trg_guard_is_staff;
+--       commit;
+--
+--    Then sign out and back in - the hub reads your profile at sign-in.
 -- ============================================================================
