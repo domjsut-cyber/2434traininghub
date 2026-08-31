@@ -20,8 +20,12 @@
   textarea { resize: vertical; }
   input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid #E4572E; outline-offset: 2px; }
 </style>
-<script src="./hub-config.js"></script>
+<!-- hub-data.js FIRST: it installs the error listener that catches a syntax
+     error in the hand-edited hub-config.js. Loaded the other way round, a typo
+     in that file drops the whole hub to demo data with nothing on screen to say
+     so. hub-data.js only reads HUB_CONFIG lazily, so the order is safe. -->
 <script src="./hub-data.js"></script>
+<script src="./hub-config.js"></script>
 </helmet>
 
 <div style="min-height: 100vh; background: #F4F1EA; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #211F1B;">
@@ -90,6 +94,14 @@
             </sc-if>
           </div>
         </div>
+
+        <sc-if value="{{ hasConfigErr }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top: 20px; font-size: 14px; line-height: 1.6; color: #6B4A1E; background: #FBF3E4; border: 1px solid #EBDCBE; padding: 14px 16px; border-radius: 8px;">
+            <strong>This hub is showing sample data, not the squadron&rsquo;s.</strong>
+            <div style="margin-top: 7px;">{{ configErr }}</div>
+            <div style="margin-top: 7px;">Nothing anyone does here is being saved. Tell whoever set the site up before running a lesson on it.</div>
+          </div>
+        </sc-if>
 
         <sc-if value="{{ showSetupLink }}" hint-placeholder-val="{{ false }}">
           <div style="margin-top: 22px; text-align: center; display: flex; flex-direction: column; gap: 10px;">
@@ -168,6 +180,10 @@
           <button onClick="{{ toggleHandout }}" style="border: 0; cursor: pointer; background: {{ handoutBtnBg }}; color: {{ handoutBtnCol }}; border-radius: 7px; padding: 11px 16px; font: 500 14px 'IBM Plex Sans', sans-serif; min-height: 44px;">{{ handoutBtnLabel }}</button>
         </div>
       </div>
+
+      <sc-if value="{{ hasSaveErr }}" hint-placeholder-val="{{ false }}">
+        <div style="flex: 0 0 auto; padding: 13px 18px; background: #8C2F1B; color: #FFF6F3; font-size: 14px; line-height: 1.55;">{{ saveErr }}</div>
+      </sc-if>
 
       <div style="flex: 1 1 auto; display: flex; min-height: 0; overflow: hidden;">
         <div style="flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; min-height: 0;">
@@ -506,6 +522,9 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:860}}">
 const LOS = ['LO1','LO2','LO3','LO4','LO5'];
+/* Slide position rides the same save-state channel as the answers; no prompt key
+   can collide with this because prompt keys come from the lesson JSON. */
+const PROGRESS_KEY = '__slide_position';
 const TITLES = { LO1:'Map skills', LO2:'The three norths', LO3:'Using a lightweight compass',
                  LO4:'Land navigation methods', LO5:'Weather' };
 
@@ -516,12 +535,13 @@ class Component extends DCLogic {
     authTab: 'in', authErr: '', authBusy: false,
     fEmail: '', fPassword: '', fService: '', fSurname: '', fDisplay: '',
     setupOpen: false, setupUrl: '', setupKey: '', setupErr: '', setupOk: '',
-    view: 'dash', liveLo: 'LO1', refreshing: false,
+    view: 'dash', liveLo: 'LO1', refreshing: false, loPrompts: null,
     profiles: [], progress: [], handouts: [], roster: [],
     lessonLo: null, lesson: null, slide: 0, handoutOpen: false, answers: {},
+    saveState: {}, saveErr: '', configErr: '',
     rService: '', rSurname: '', rEmail: '', rFlight: '', rStaff: false,
     rosterMsg: '', rosterOk: false, loadErr: '',
-    liveCadet: null, cadetPrompts: null,
+    liveCadet: null,
   };
 
   componentDidMount() {
@@ -546,13 +566,23 @@ class Component extends DCLogic {
     const D = window.HubData;
     if (!D) { this.setState({ booting: false }); return; }
     const cfg = D.config();
-    let user = null;
-    try { user = await D.currentUser(); } catch (e) {}
+    let user = null, bootErr = '';
+    try {
+      user = await D.currentUser();
+    } catch (e) {
+      // Swallowing this used to drop the user at the sign-in screen with no
+      // reason given, which looks identical to being signed out on purpose.
+      bootErr = e && e.sessionExpired
+        ? 'Your sign-in has lapsed. Sign in again - nothing is lost.'
+        : 'Could not reach the database: ' + ((e && e.message) || 'unknown error') + '.' +
+          ' Your work is safe; try again in a moment.';
+    }
     this.setState({
       booting: false, mode: D.mode(), user,
       unclaimed: !!(user && user.unclaimed),
       setupUrl: cfg ? cfg.url : '', setupKey: cfg ? cfg.anonKey : '',
-      view: user && user.is_staff ? 'dash' : 'dash',
+      configErr: D.configError ? D.configError() : '',
+      authErr: bootErr || this.state.authErr,
     }, () => { if (user && !user.unclaimed) this.loadAll(); });
   }
 
@@ -562,11 +592,15 @@ class Component extends DCLogic {
       const [profiles, progress, handouts] = await Promise.all([
         D.listProfiles(), D.listProgress(), D.listAllHandout(null),
       ]);
-      let roster = [];
+      let roster = this.state.roster || [], rosterErr = '';
       if (this.state.user && this.state.user.is_staff) {
-        try { roster = await D.listRoster(); } catch (e) {}
+        // Not swallowed: an empty "waiting to sign up" list is indistinguishable
+        // from a failed read, and staff would sit waiting for a cadet who was
+        // already on the roster.
+        try { roster = await D.listRoster(); }
+        catch (e) { rosterErr = 'Could not load the list of cadets waiting to sign up: ' + ((e && e.message) || 'unknown error'); }
       }
-      this.setState({ profiles, progress, handouts, roster, loadErr: '' });
+      this.setState({ profiles, progress, handouts, roster, loadErr: rosterErr });
     } catch (e) {
       // Never fail silently: a lapsed session used to leave the screen showing
       // hour-old data while every write was refused, which is impossible to
@@ -641,18 +675,30 @@ class Component extends DCLogic {
     } catch (e) { this.setState({ rosterMsg: e.message, rosterOk: false }); }
   }
 
-  gotoLive(lo) { this.setState({ view: 'live', liveLo: lo, liveCadet: null }); }
+  gotoLive(lo) { this.setState({ view: 'live', liveLo: lo, liveCadet: null }); this.loadLoPrompts(lo); }
+  pickLo(lo) { this.setState({ liveLo: lo, liveCadet: null }); this.loadLoPrompts(lo); }
 
-  async openCadet(cadet) {
-    this.setState({ liveCadet: cadet, cadetPrompts: null });
+  /* The handout denominator in the live view used to be a hardcoded table
+     ({ LO1: 4, LO2: 3, ... }). It happened to be right, but it is the same fact
+     written down twice - edit a lesson's prompts and staff would silently read
+     "3/4" against a lesson that now has five. Read it from the lesson instead. */
+  async loadLoPrompts(lo) {
+    if (this._loPromptsFor === lo && this.state.loPrompts) return;
+    this._loPromptsFor = lo;
+    this.setState({ loPrompts: null });
     try {
-      const res = await fetch('./lessons/' + this.state.liveLo + '.json');
+      const res = await fetch('./lessons/' + lo + '.json');
+      if (!res.ok) throw new Error('lesson file ' + res.status);
       const lesson = await res.json();
-      this.setState({ cadetPrompts: lesson.prompts || [] });
-    } catch (e) { this.setState({ cadetPrompts: [] }); }
+      if (this._loPromptsFor === lo) this.setState({ loPrompts: lesson.prompts || [] });
+    } catch (e) {
+      if (this._loPromptsFor === lo) this.setState({ loPrompts: [] });
+    }
   }
 
-  closeCadet() { this.setState({ liveCadet: null, cadetPrompts: null }); }
+  openCadet(cadet) { this.setState({ liveCadet: cadet }); this.loadLoPrompts(this.state.liveLo); }
+
+  closeCadet() { this.setState({ liveCadet: null }); }
 
   async toggleStaff(id, next) {
     try {
@@ -663,9 +709,12 @@ class Component extends DCLogic {
 
   /* ---------------- lesson ---------------- */
   async openLesson(lo) {
-    this.setState({ lessonLo: lo, lesson: null, slide: 0 });
+    // Everything loaded from the database counts as saved; start from a clean
+    // slate so a failure carried over from the last lesson cannot mislead.
+    this.setState({ lessonLo: lo, lesson: null, slide: 0, saveState: {}, saveErr: '' });
     try {
       const res = await fetch('./lessons/' + lo + '.json');
+      if (!res.ok) throw new Error('lesson file ' + res.status);
       const lesson = await res.json();
       const mine = this.state.user && !this.state.user.unclaimed
         ? await window.HubData.listHandout(this.state.user.id, lo) : [];
@@ -674,8 +723,8 @@ class Component extends DCLogic {
       const prog = this.state.progress.find(p => p.cadet_id === (this.state.user||{}).id && p.lo === lo);
       this.setState({ lesson, answers, slide: prog && !prog.completed_at ? Math.min(prog.slide_index || 0, lesson.slides.length - 1) : 0 });
     } catch (e) {
-      this.setState({ lessonLo: null, lesson: null });
-      alert('Could not load that lesson.');
+      this.setState({ lessonLo: null, lesson: null,
+        loadErr: 'Could not open ' + lo + '. Check your connection and try again.' });
     }
   }
 
@@ -709,20 +758,36 @@ class Component extends DCLogic {
     clearTimeout(this._pt);
     this._pt = setTimeout(() => {
       window.HubData.saveProgress(u.id, s.lessonLo, n, s.lesson.slides.length, n >= s.lesson.slides.length - 1)
-        .catch(() => {});
+        .then(() => this.markSave(PROGRESS_KEY, 'saved', ''))
+        .catch((e) => this.markSave(PROGRESS_KEY, 'failed', saveMessage(e)));
     }, 400);
+  }
+
+  /* Record what the database actually did with one write. The old code threw the
+     result away, while the panel showed "SAVED" purely because the textarea had
+     text in it - so a cadet whose token had lapsed watched every answer report
+     success and lose the lot.
+
+     Losing your place in the lesson rides the same channel under a key no prompt
+     can collide with, so the banner clears only once everything is landing. */
+  markSave(key, st, err) {
+    const saveState = Object.assign({}, this.state.saveState, { [key]: st });
+    const stillFailing = Object.keys(saveState).some(k => saveState[k] === 'failed');
+    this.setState({ saveState, saveErr: stillFailing ? (err || this.state.saveErr) : '' });
   }
 
   setAnswer(key, val) {
     const answers = Object.assign({}, this.state.answers, { [key]: val });
-    this.setState({ answers });
+    const saveState = Object.assign({}, this.state.saveState, { [key]: 'pending' });
+    this.setState({ answers, saveState });
     const u = this.state.user, lo = this.state.lessonLo;
     if (!u || u.unclaimed) return;
-    clearTimeout(this._at ||= null);
     this._saveTimers = this._saveTimers || {};
     clearTimeout(this._saveTimers[key]);
     this._saveTimers[key] = setTimeout(() => {
-      window.HubData.saveAnswer(u.id, lo, key, val).catch(() => {});
+      window.HubData.saveAnswer(u.id, lo, key, val)
+        .then(() => this.markSave(key, 'saved', ''))
+        .catch((e) => this.markSave(key, 'failed', saveMessage(e)));
     }, 700);
   }
 
@@ -771,15 +836,23 @@ class Component extends DCLogic {
 
       prompts = (s.lesson.prompts || []).map((p, i) => {
         const val = s.answers[p.key] || '';
-        const done = val.trim().length > 3;
+        const answered = val.trim().length > 3;
+        // The label now reports what the DATABASE did, not how much text is in
+        // the box. No entry in saveState means it came back from the database
+        // on open, so it is already saved.
+        const st = (s.saveState || {})[p.key];
+        const failed = st === 'failed';
+        const label = failed ? 'NOT SAVED'
+          : st === 'pending' ? 'SAVING…'
+          : answered ? 'SAVED' : 'NOT ANSWERED';
         return {
           num: String(i + 1).padStart(2, '0'), text: p.text, answer: val,
-          dotCol: done ? '#4C7A4F' : '#E4572E',
+          dotCol: failed ? '#8C2F1B' : answered ? '#4C7A4F' : '#E4572E',
           onChange: (e) => this.setAnswer(p.key, e.target.value),
           onJump: () => this.goSlide(Math.min(p.afterSlide, s.lesson.slides.length - 1)),
           jumpLabel: 'Slide ' + (p.afterSlide + 1),
-          stateLabel: done ? 'SAVED' : 'NOT ANSWERED',
-          stateCol: done ? '#4C7A4F' : '#9A907C',
+          stateLabel: label,
+          stateCol: failed ? '#8C2F1B' : st === 'pending' ? '#9A907C' : answered ? '#4C7A4F' : '#9A907C',
         };
       });
     }
@@ -833,12 +906,12 @@ class Component extends DCLogic {
     }));
 
     /* -- live -- */
-    const promptTotals = { LO1: 4, LO2: 3, LO3: 6, LO4: 5, LO5: 4 };
-    const total = promptTotals[s.liveLo] || 4;
+    const loPrompts = s.loPrompts || [];
+    const total = loPrompts.length;
     const liveRows = cadets.map(c => {
       const answered = (s.handouts || []).filter(h => h.cadet_id === c.id && h.lo === s.liveLo && (h.answer || '').trim().length > 3).length;
       const prog = (byCadet[c.id] || []).find(p => p.lo === s.liveLo);
-      const pct = Math.round((answered / total) * 100);
+      const pct = total ? Math.round((answered / total) * 100) : 0;   // total is 0 until the lesson file lands
       return {
         name: c.display_name,
         slideLabel: prog ? (prog.completed_at ? 'finished' : 'slide ' + ((prog.slide_index || 0) + 1)) : '\u2014',
@@ -860,7 +933,7 @@ class Component extends DCLogic {
         : 'has not opened this lesson');
       const mine = {};
       (s.handouts || []).forEach(h => { if (h.cadet_id === lc.id && h.lo === s.liveLo) mine[h.prompt_key] = h.answer; });
-      cadetAnswers = (s.cadetPrompts || []).map((p, i) => {
+      cadetAnswers = loPrompts.map((p, i) => {
         const a = (mine[p.key] || '').trim();
         return {
           num: String(i + 1).padStart(2, '0'),
@@ -875,7 +948,7 @@ class Component extends DCLogic {
 
     const loTabs = LOS.map(lo => {
       const on = s.liveLo === lo;
-      return { label: lo, onPick: () => this.setState({ liveLo: lo }),
+      return { label: lo, onPick: () => this.pickLo(lo),
         bg: on ? '#211F1B' : '#FFFFFF', col: on ? '#F4F1EA' : '#6B6252',
         border: on ? '#211F1B' : '#E2DACA' };
     });
@@ -908,6 +981,10 @@ class Component extends DCLogic {
       // Once the site carries its own config there is nothing for a visitor to
       // set up, so the link is hidden. Staff can still reach it with ?setup=1.
       showSetupLink: !isLive, hideSetupLink: isLive,
+      // A misconfigured hub-config.js is now stated on the page. Previously it
+      // was indistinguishable from "not set up yet", which is how a live sign-in
+      // page ended up quietly backed by sample cadets.
+      hasConfigErr: !!s.configErr, configErr: s.configErr,
 
       /* setup */
       openSetup: () => this.setState({ setupOpen: true, setupErr: '', setupOk: '' }),
@@ -929,7 +1006,8 @@ class Component extends DCLogic {
 
       /* nav */
       view: s.view,
-      navDash: () => this.setState({ view: 'dash' }), navLive: () => this.setState({ view: 'live' }),
+      navDash: () => this.setState({ view: 'dash' }),
+      navLive: () => { this.setState({ view: 'live' }); this.loadLoPrompts(s.liveLo); },
       navCadets: () => this.setState({ view: 'cadets' }), navRes: () => this.setState({ view: 'res' }),
       vDash: s.view === 'dash', vLive: s.view === 'live', vCadets: s.view === 'cadets', vRes: s.view === 'res',
       navDashBg: s.view === 'dash' ? '#F0EAD9' : 'transparent', navDashCol: s.view === 'dash' ? '#211F1B' : '#6B6252',
@@ -946,7 +1024,7 @@ class Component extends DCLogic {
       loTabs, liveRows,
       showLiveList: !s.liveCadet, showCadet: !!s.liveCadet,
       cadetName, cadetMeta, cadetAnswers,
-      cadetLoading: !!s.liveCadet && s.cadetPrompts === null,
+      cadetLoading: !!s.liveCadet && s.loPrompts === null,
       closeCadet: () => this.closeCadet(),
       refreshLive: () => { this.setState({ refreshing: true }); this.loadAll().then(() => this.setState({ refreshing: false })); },
       refreshLabel: s.refreshing ? 'Refreshing\u2026' : 'Refresh',
@@ -976,11 +1054,20 @@ class Component extends DCLogic {
       closeLesson: () => this.closeLesson(),
       handoutOpen: s.handoutOpen,
       toggleHandout: () => this.setState({ handoutOpen: !s.handoutOpen }),
+      hasSaveErr: !!s.saveErr, saveErr: s.saveErr,
       handoutBtnLabel: s.handoutOpen ? 'Hide handout' : 'Handout',
       handoutBtnBg: s.handoutOpen ? '#F4F1EA' : 'rgba(244,241,234,0.14)',
       handoutBtnCol: s.handoutOpen ? '#211F1B' : '#F4F1EA',
     };
   }
+}
+
+/* What to tell a cadet when a save is refused. Plain language, and it says the
+   one thing that matters to them: the words are still on the screen. */
+function saveMessage(e) {
+  if (e && e.sessionExpired)
+    return 'You have been signed out, so nothing is being saved. Your answers are still on this screen - sign in again in another tab, then come back and touch each answer to save it.';
+  return 'Your last change has not been saved. Your answers are still on this screen. Check the squadron WiFi and it will try again as you type.';
 }
 
 function firstWordAfterRank(name) {

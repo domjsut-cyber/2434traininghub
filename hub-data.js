@@ -24,12 +24,63 @@
      A device-level setting wins, so anyone can point their own browser at a
      test project without disturbing the squadron's.
      -------------------------------------------------------------------------- */
+  /* hub-config.js is hand-edited, in Notepad, by whoever is setting the site up.
+     If it has a syntax error the entire file fails to run, HUB_CONFIG is never
+     assigned, and the hub would otherwise drop to demo data in total silence -
+     which is exactly how the squadron once served a live sign-in page backed by
+     sample cadets. hub-data.js is loaded BEFORE hub-config.js so that this
+     listener is already installed when that file is parsed. Do not swap them. */
+  let _fileError = '';
+  window.addEventListener('error', function (ev) {
+    if (ev && /hub-config\.js/i.test(String(ev.filename || '')))
+      _fileError = 'hub-config.js could not be read - the browser reported: ' + ((ev && ev.message) || 'syntax error') + '.';
+  }, true);
+
+  /* The listener above only gets a useful filename when the page is served over
+     http(s). Opened straight off a USB stick (file://) the browser hides script
+     errors as a bare "Script error." with no filename, so we detect it by its
+     footprint instead: the tag is on the page, but the file never got as far as
+     assigning HUB_CONFIG.
+
+     This also distinguishes the two cases that used to look identical:
+       HUB_CONFIG missing entirely -> the file is broken            (say so)
+       HUB_CONFIG present but blank -> nobody has filled it in yet  (normal) */
+  function fileFailedToLoad() {
+    try {
+      if (window.HUB_CONFIG !== undefined) return false;
+      return !!document.querySelector('script[src*="hub-config"]');
+    } catch (e) { return false; }
+  }
+
+  /* Shared by the file and the setup screen, so a bad value is caught on both
+     paths. Returns a plain-language reason, or '' when the pair is usable. */
+  function configProblem(url, key) {
+    if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url))
+      return 'That does not look like a Supabase project URL. It should look like https://abcdefgh.supabase.co';
+    // A secret key bypasses row-level security entirely, so it would hand every
+    // cadet's record to anyone who viewed the page source.
+    if (/^sb_secret_/i.test(key) || /service_role/i.test(key))
+      return 'That is a SECRET key - never use it here. It bypasses all the security rules. Copy the publishable key instead (the one Supabase says is safe to share).';
+    if (key.length < 40)
+      return 'That key looks too short - copy the whole publishable key.';
+    if (!/^sb_publishable_/i.test(key) && !/^eyJ/.test(key))
+      return 'That does not look like a publishable key. It should start with sb_publishable_ (or eyJ if it is an older project).';
+    return '';
+  }
+
+  let _siteError = '';
   function siteConfig() {
     const c = window.HUB_CONFIG;
     if (!c) return null;
     const url = (c.url || '').trim().replace(/\/+$/, '');
     const key = (c.publishableKey || c.anonKey || '').trim();
     if (!url || !key) return null;
+    // The same checks the setup screen runs. Previously this path did none, so
+    // a secret key pasted into the file - the route the instructions actually
+    // tell staff to use - was accepted without a word.
+    const bad = configProblem(url, key);
+    if (bad) { _siteError = 'hub-config.js: ' + bad; return null; }
+    _siteError = '';
     return { url, anonKey: key, fromSite: true };
   }
   function readConfig() {
@@ -45,20 +96,12 @@
   function writeConfig(url, anonKey) {
     url = (url || '').trim().replace(/\/+$/, '');
     anonKey = (anonKey || '').trim();
-    if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url))
-      throw new Error('That does not look like a Supabase project URL. It should look like https://abcdefgh.supabase.co');
-    // Guard against pasting a secret key into a browser app. A secret key
-    // bypasses row-level security entirely, so it would hand every cadet's
-    // record to anyone who viewed the page source.
-    if (/^sb_secret_/i.test(anonKey) || /service_role/i.test(anonKey))
-      throw new Error('That is a SECRET key - never use it here. It bypasses all the security rules. Copy the publishable key instead (the one Supabase says is safe to share).');
-    if (anonKey.length < 40)
-      throw new Error('That key looks too short - copy the whole publishable key.');
-    if (!/^sb_publishable_/i.test(anonKey) && !/^eyJ/.test(anonKey))
-      throw new Error('That does not look like a publishable key. It should start with sb_publishable_ (or eyJ if it is an older project).');
+    const bad = configProblem(url, anonKey);
+    if (bad) throw new Error(bad);
     localStorage.setItem(CFG_KEY, JSON.stringify({ url, anonKey }));
+    _client = null;   // otherwise the next call reuses a client for the old project
   }
-  function clearConfig() { localStorage.removeItem(CFG_KEY); }
+  function clearConfig() { localStorage.removeItem(CFG_KEY); _client = null; }
 
   /* ------------------------------------------------------------ demo store -- */
   const DEMO_NAMES = [
@@ -145,6 +188,19 @@
     saveConfig: writeConfig,
     clearConfig,
     config: readConfig,
+
+    /* Why the hub is in demo mode when it was meant to be live. '' means either
+       genuinely unconfigured or working fine - the caller knows which from
+       isLive(). Surfaced on the sign-in screen so a broken hub-config.js is
+       visible on the page instead of only in the browser console. */
+    configError() {
+      if (readConfig()) return '';           // connected; nothing to report
+      if (_siteError) return _siteError;     // file present, but the values are wrong
+      if (fileFailedToLoad())
+        return _fileError || 'hub-config.js is on the page but did not run, which almost always means a typo in it.' +
+          ' Open it and check each value is wrapped in single quotes and each line ends with a comma, then publish the folder again.';
+      return '';                             // genuinely not set up yet
+    },
 
     async connectionTest() {
       const c = await client();
@@ -276,9 +332,14 @@
     },
 
     async removeFromRoster(id) {
-      const c = await client();
+      // requireSession, as addToRoster already does: a lapsed token should read
+      // as "you have been signed out", not as a raw row-level-security refusal.
+      const c = await requireSession();
       const { error } = await c.from('roster').delete().eq('id', id);
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(
+        /row-level security/i.test(error.message)
+          ? 'The database refused this. Your sign-in may have lapsed - sign out and back in, then try again.'
+          : error.message);
     },
 
     /* ---- progress ---- */
