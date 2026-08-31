@@ -349,11 +349,21 @@
           <sc-if value="{{ isDemo }}" hint-placeholder-val="{{ false }}">
             <button onClick="{{ openSetup }}" style="border: 1px solid rgba(228,87,46,0.5); background: rgba(228,87,46,0.14); cursor: pointer; color: #F0A08A; border-radius: 6px; padding: 7px 12px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; white-space: nowrap; flex: 0 0 auto;">SAMPLE DATA &middot; SET UP</button>
           </sc-if>
+          <sc-if value="{{ showPreviewBtn }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ startPreview }}" style="border: 1px solid rgba(244,241,234,0.3); background: none; cursor: pointer; color: rgba(244,241,234,0.8); border-radius: 6px; padding: 8px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; min-height: 40px; white-space: nowrap; flex: 0 0 auto;">VIEW AS CADET</button>
+          </sc-if>
           <span style="font-size: 14px; opacity: 0.75; white-space: nowrap;">{{ userName }}</span>
           <span style="font: 500 10px 'IBM Plex Mono', monospace; letter-spacing: 0.12em; padding: 4px 8px; border-radius: 4px; background: {{ roleBadgeBg }}; color: {{ roleBadgeCol }};">{{ roleBadge }}</span>
           <button onClick="{{ doSignOut }}" style="border: 1px solid rgba(244,241,234,0.25); background: none; cursor: pointer; color: rgba(244,241,234,0.7); border-radius: 6px; padding: 8px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; min-height: 40px; white-space: nowrap; flex: 0 0 auto;">SIGN OUT</button>
         </div>
       </div>
+
+      <sc-if value="{{ previewing }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 12px 20px; background: #3E6B8A; color: #FFFFFF; position: sticky; top: 60px; z-index: 9;">
+          <span style="font-size: 14px; line-height: 1.5;"><strong>You are looking at the cadet view.</strong> This is what your cadets see. Anything you type here saves against your own account, not theirs, and staff are left out of the class totals.</span>
+          <button onClick="{{ endPreview }}" style="border: 1px solid rgba(255,255,255,0.55); background: rgba(255,255,255,0.12); cursor: pointer; color: #FFFFFF; border-radius: 6px; padding: 9px 14px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; min-height: 44px; white-space: nowrap; flex: 0 0 auto;">BACK TO STAFF VIEW</button>
+        </div>
+      </sc-if>
 
       <sc-if value="{{ hasLoadErr }}" hint-placeholder-val="{{ false }}">
         <div style="padding: 14px 20px; background: #FBEDE9; border-bottom: 1px solid #F0CFC6; font-size: 14px; line-height: 1.5; color: #8C2F1B;">{{ loadErr }}</div>
@@ -644,6 +654,9 @@ class Component extends DCLogic {
     fEmail: '', fPassword: '', fService: '', fSurname: '', fDisplay: '',
     setupOpen: false, setupUrl: '', setupKey: '', setupErr: '', setupOk: '',
     view: 'dash', liveLo: 'LO1', refreshing: false, loPrompts: null,
+    // Staff previewing the cadet interface. Deliberately not remembered across a
+    // reload, so nobody can end up stuck in it and think they have lost access.
+    viewAsCadet: false,
     profiles: [], progress: [], handouts: [], roster: [],
     lessonLo: null, lesson: null, slide: 0, handoutOpen: false, answers: {},
     // Opening a lesson lands on a chooser, not straight in the slides. During a
@@ -928,6 +941,16 @@ class Component extends DCLogic {
     const showAuth = !s.booting && !showSetup && !signedIn;
     const showApp = signedIn && !inLesson && !showSetup;
     const isStaff = signedIn && !!u.is_staff;
+    /* "View as cadet" is a preview of the interface, nothing more. The account
+       is still staff as far as the database is concerned - row-level security
+       does not know or care what the screen is showing - so this can never be a
+       way to gain or drop access. It exists so staff can see what they are
+       about to send a room full of cadets into.
+
+       staffUI drives what is on screen; isStaff still drives what the app is
+       allowed to ask for, which is why loadAll() keeps reading the roster. */
+    const staffUI = isStaff && !s.viewAsCadet;
+    const previewing = isStaff && !!s.viewAsCadet;
 
     const pill = (on) => on
       ? { bg: '#211F1B', col: '#F4F1EA' }
@@ -1141,7 +1164,10 @@ class Component extends DCLogic {
     return {
       booting: s.booting, showAuth, showApp, showSetup, showLesson,
       showLessonMenu, showHandoutOnly, showAnims, showAnimPlayer,
-      isLive, isDemo: !isLive, isStaff, isCadet: signedIn && !isStaff,
+      isLive, isDemo: !isLive, isStaff: staffUI, isCadet: signedIn && !staffUI,
+      showPreviewBtn: isStaff && !previewing, previewing,
+      startPreview: () => this.setState({ viewAsCadet: true, view: 'dash', liveCadet: null }),
+      endPreview: () => this.setState({ viewAsCadet: false, lesson: null, lessonLo: null, animOpen: null }),
 
       /* auth */
       isSignUp: s.authTab === 'up', isSignIn: s.authTab === 'in',
@@ -1183,9 +1209,9 @@ class Component extends DCLogic {
 
       /* shell */
       userName: signedIn ? u.display_name : '',
-      roleBadge: isStaff ? 'STAFF' : 'CADET',
-      roleBadgeBg: isStaff ? 'rgba(228,87,46,0.9)' : 'rgba(244,241,234,0.16)',
-      roleBadgeCol: isStaff ? '#FFFFFF' : 'rgba(244,241,234,0.8)',
+      roleBadge: previewing ? 'CADET VIEW' : isStaff ? 'STAFF' : 'CADET',
+      roleBadgeBg: previewing ? 'rgba(62,107,138,0.95)' : isStaff ? 'rgba(228,87,46,0.9)' : 'rgba(244,241,234,0.16)',
+      roleBadgeCol: previewing || isStaff ? '#FFFFFF' : 'rgba(244,241,234,0.8)',
       doSignOut: () => this.doSignOut(),
       hasLoadErr: !!s.loadErr, loadErr: s.loadErr,
       sidebarNote: isLive ? 'Live data. Cadets are identified by service number and display name only.' : 'Sample data in this browser. Set up the database to go live.',
