@@ -189,6 +189,36 @@
             </button>
           </sc-for>
         </div>
+
+        <sc-if value="{{ canReset }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top: 28px; padding-top: 22px; border-top: 1px solid #E2DACA;">
+            <sc-if value="{{ showResetLink }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ openReset }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; color: #6B6252; padding: 8px 0; min-height: 44px;">START THIS LESSON AGAIN</button>
+            </sc-if>
+
+            <sc-if value="{{ resetOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px; padding: 20px 22px;">
+                <div style="font-family: 'Source Serif 4', Georgia, serif; font-size: 19px; font-weight: 600; color: #211F1B;">Start this lesson again?</div>
+                <p style="margin: 9px 0 0; font-size: 15px; line-height: 1.6; color: #6B6252;">Clearing your place just puts the lesson back to &lsquo;Not started&rsquo; and sends you to the first slide. Your written answers are kept.</p>
+                <sc-if value="{{ hasAnswersToClear }}" hint-placeholder-val="{{ true }}">
+                  <p style="margin: 9px 0 0; font-size: 15px; line-height: 1.6; color: #8C2F1B;">Clearing your answers as well cannot be undone &mdash; what you have written is deleted for good.</p>
+                </sc-if>
+
+                <sc-if value="{{ hasResetErr }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top: 14px; font-size: 14px; line-height: 1.5; color: #8C2F1B; background: #FBEDE9; border: 1px solid #F0CFC6; padding: 12px 14px; border-radius: 7px;">{{ resetErr }}</div>
+                </sc-if>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px;">
+                  <button onClick="{{ resetPlace }}" style="border: 0; cursor: pointer; background: #211F1B; color: #F4F1EA; padding: 13px 18px; border-radius: 8px; font: 500 15px 'IBM Plex Sans', sans-serif; min-height: 46px;">{{ resetPlaceLabel }}</button>
+                  <sc-if value="{{ hasAnswersToClear }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ resetAll }}" style="border: 1px solid #E0B4A8; cursor: pointer; background: #FFFFFF; color: #8C2F1B; padding: 13px 18px; border-radius: 8px; font: 500 15px 'IBM Plex Sans', sans-serif; min-height: 46px;">{{ resetAllLabel }}</button>
+                  </sc-if>
+                  <button onClick="{{ cancelReset }}" style="border: 0; background: none; cursor: pointer; color: #6B6252; padding: 13px 14px; border-radius: 8px; font: 500 15px 'IBM Plex Sans', sans-serif; min-height: 46px;">Cancel</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
       </div>
     </div>
   </sc-if>
@@ -479,6 +509,13 @@
                     <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px; padding: 24px 26px;">
                       <div style="font-family: 'Source Serif 4', Georgia, serif; font-size: 25px; font-weight: 600;">{{ cadetName }}</div>
                       <div style="font: 500 12px 'IBM Plex Mono', monospace; color: #9A907C; margin-top: 7px;">{{ cadetMeta }}</div>
+                      <div style="margin-top: 16px; padding-top: 15px; border-top: 1px solid #EFE9DA; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                        <button onClick="{{ resetCadet }}" style="border: 1px solid #E2DACA; background: #FFFFFF; cursor: pointer; color: #6B6252; border-radius: 7px; padding: 10px 15px; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.08em; min-height: 44px;">CLEAR THEIR PLACE</button>
+                        <span style="font-size: 13px; line-height: 1.5; color: #9A907C; flex: 1 1 200px;">Puts this lesson back to &lsquo;Not started&rsquo; for them. Their written answers stay &mdash; only the cadet can delete their own work.</span>
+                      </div>
+                      <sc-if value="{{ hasStaffResetMsg }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top: 13px; font-size: 14px; line-height: 1.5; color: #2F5A33; background: #ECF3EC; border: 1px solid #CFE0D0; padding: 11px 13px; border-radius: 7px;">{{ staffResetMsg }}</div>
+                      </sc-if>
                     </div>
                     <sc-if value="{{ cadetLoading }}" hint-placeholder-val="{{ false }}">
                       <div style="font: 500 12px 'IBM Plex Mono', monospace; color: #9A907C; padding: 8px 2px;">LOADING&hellip;</div>
@@ -664,6 +701,7 @@ class Component extends DCLogic {
     // reading ahead on their own screen.
     lessonMode: 'menu', animOpen: null,
     saveState: {}, saveErr: '', configErr: '',
+    resetOpen: false, resetBusy: false, resetErr: '', staffResetMsg: '',
     rService: '', rSurname: '', rEmail: '', rFlight: '', rStaff: false,
     rosterMsg: '', rosterOk: false, loadErr: '',
     liveCadet: null,
@@ -821,7 +859,7 @@ class Component extends DCLogic {
     }
   }
 
-  openCadet(cadet) { this.setState({ liveCadet: cadet }); this.loadLoPrompts(this.state.liveLo); }
+  openCadet(cadet) { this.setState({ liveCadet: cadet, staffResetMsg: '' }); this.loadLoPrompts(this.state.liveLo); }
 
   closeCadet() { this.setState({ liveCadet: null }); }
 
@@ -860,6 +898,45 @@ class Component extends DCLogic {
      "exit" leaves altogether. Progress is written on the way out of the slides
      so a cadet who reads a few slides then switches to the handout is not
      recorded as having stopped where they happened to leave off. */
+  /* Start a lesson again. Two separate things, because they are not equally
+     undoable: clearing your place just makes the card say "Not started", while
+     clearing your answers throws away work you cannot get back. */
+  async doResetLesson(alsoAnswers) {
+    const u = this.state.user, lo = this.state.lessonLo;
+    if (!u || u.unclaimed || !lo) return;
+    this.setState({ resetBusy: true, resetErr: '' });
+    // Kill anything already queued, or a debounced save from before the reset
+    // would land afterwards and quietly recreate the row we just deleted.
+    clearTimeout(this._pt);
+    const t = this._saveTimers || {};
+    Object.keys(t).forEach(k => clearTimeout(t[k]));
+    try {
+      await window.HubData.resetProgress(u.id, lo);
+      if (alsoAnswers) await window.HubData.clearAnswers(u.id, lo);
+      this.setState({
+        resetBusy: false, resetOpen: false, slide: 0, saveState: {}, saveErr: '',
+        answers: alsoAnswers ? {} : this.state.answers,
+      });
+      await this.loadAll();
+    } catch (e) {
+      this.setState({ resetBusy: false, resetErr: (e && e.message) || String(e) });
+    }
+  }
+
+  /* Staff clearing a cadet's place. The same delete, allowed by the progress
+     policy's is_staff() branch. Their written answers are untouched - staff hold
+     a read-only policy on those and the database would refuse anything else. */
+  async resetCadetProgress(cadet) {
+    this.setState({ staffResetMsg: '' });
+    try {
+      await window.HubData.resetProgress(cadet.id, this.state.liveLo);
+      await this.loadAll();
+      this.setState({ staffResetMsg: cadet.display_name + ' can start ' + this.state.liveLo + ' again. Their answers are still here.' });
+    } catch (e) {
+      this.setState({ staffResetMsg: (e && e.message) || String(e) });
+    }
+  }
+
   setLessonMode(m) { this.setState({ lessonMode: m, animOpen: null }); }
   backToMenu() { this.setState({ lessonMode: 'menu', animOpen: null, handoutOpen: false }); }
   openAnim(file) { this.setState({ animOpen: file }); }
@@ -1015,9 +1092,14 @@ class Component extends DCLogic {
 
     /* -- the chooser that now sits between a lesson card and its content -- */
     let menuTitle = '', menuSub = '', menuCards = [], animCards = [], animTitle = '', animSrc = '';
+    let canReset = false, hasAnswersToClear = false;
     if (s.lesson) {
       const slides = s.lesson.slides || [];
       const answeredN = prompts.filter(p => (p.answer || '').trim().length > 0).length;
+      // Only offer "start again" when there is actually something to clear.
+      const myLoProg = (s.progress || []).find(p => p.cadet_id === (u || {}).id && p.lo === s.lessonLo);
+      hasAnswersToClear = answeredN > 0;
+      canReset = !!myLoProg || hasAnswersToClear;
       // One card per animation, not per slide: an animation used on two slides
       // should still be one thing to pick from.
       const seen = {};
@@ -1236,6 +1318,8 @@ class Component extends DCLogic {
       loTabs, liveRows,
       showLiveList: !s.liveCadet, showCadet: !!s.liveCadet,
       cadetName, cadetMeta, cadetAnswers,
+      resetCadet: () => this.resetCadetProgress(s.liveCadet),
+      hasStaffResetMsg: !!s.staffResetMsg, staffResetMsg: s.staffResetMsg,
       cadetLoading: !!s.liveCadet && s.loPrompts === null,
       closeCadet: () => this.closeCadet(),
       refreshLive: () => { this.setState({ refreshing: true }); this.loadAll().then(() => this.setState({ refreshing: false })); },
@@ -1270,6 +1354,17 @@ class Component extends DCLogic {
 
       /* chooser, handout-on-its-own, animations */
       menuTitle, menuSub, menuCards, animCards, animTitle, animSrc,
+
+      /* start this lesson again */
+      canReset, showResetLink: canReset && !s.resetOpen, resetOpen: s.resetOpen,
+      hasAnswersToClear,
+      openReset: () => this.setState({ resetOpen: true, resetErr: '' }),
+      cancelReset: () => this.setState({ resetOpen: false, resetErr: '' }),
+      resetPlace: () => this.doResetLesson(false),
+      resetAll: () => this.doResetLesson(true),
+      resetPlaceLabel: s.resetBusy ? 'Working…' : 'Clear my place only',
+      resetAllLabel: s.resetBusy ? 'Working…' : 'Clear my place and my answers',
+      hasResetErr: !!s.resetErr, resetErr: s.resetErr,
       backToMenu: () => this.backToMenu(),
       closeAnim: () => this.closeAnim(),
       hasPrompts: prompts.length > 0,

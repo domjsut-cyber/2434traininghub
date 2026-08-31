@@ -369,6 +369,50 @@
       return data;
     },
 
+    /* Clear someone's place in a lesson so it reads "Not started" again.
+
+       A delete, not an update: the progress policy is
+         using (cadet_id = auth.uid() or is_staff())
+         with check (cadet_id = auth.uid())
+       so staff can DELETE anyone's row, but an UPDATE by staff on a cadet's row
+       would fail the check. Deleting works for both, and needs no schema change. */
+    async resetProgress(cadetId, lo) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        d.progress = d.progress.filter(p => !(p.cadet_id === cadetId && (!lo || p.lo === lo)));
+        saveDemo(d); return;
+      }
+      const c = await requireSession();
+      let q = c.from('lesson_progress').delete().eq('cadet_id', cadetId);
+      if (lo) q = q.eq('lo', lo);
+      const { error } = await q;
+      if (error) throw new Error(
+        /row-level security/i.test(error.message)
+          ? 'The database refused this. Your sign-in may have lapsed - sign out and back in, then try again.'
+          : error.message);
+    },
+
+    /* Throw away written answers. ONLY the cadet themselves can do this: the
+       handout policy is `using (cadet_id = auth.uid())` and staff hold a
+       read-only policy, deliberately - staff can read a cadet's work during a
+       lesson but must never be able to alter or destroy it. The interface does
+       not offer this to staff, and the database would refuse it anyway. */
+    async clearAnswers(cadetId, lo) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        d.handouts = d.handouts.filter(h => !(h.cadet_id === cadetId && (!lo || h.lo === lo)));
+        saveDemo(d); return;
+      }
+      const c = await requireSession();
+      let q = c.from('handout_responses').delete().eq('cadet_id', cadetId);
+      if (lo) q = q.eq('lo', lo);
+      const { error } = await q;
+      if (error) throw new Error(
+        /row-level security/i.test(error.message)
+          ? 'The database refused this. Only the cadet whose answers these are can delete them.'
+          : error.message);
+    },
+
     /* ---- handout ---- */
     async listHandout(cadetId, lo) {
       if (!this.isLive())
