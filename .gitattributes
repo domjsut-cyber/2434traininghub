@@ -1,0 +1,4 @@
+# This repo is deployed as-is to Netlify: what git checks out must be byte-for-byte
+# what gets served. The animations in anim/ carry embedded base64 payloads, so no
+# end-of-line conversion anywhere.
+* -text
