@@ -165,13 +165,116 @@
     </div>
   </sc-if>
 
+  <!-- ==================== LESSON CHOOSER ====================
+       Sits between tapping a lesson and getting any content. Without it, opening
+       a lesson dropped a cadet straight into the slides, and during a taught
+       lesson they read ahead on their own screen instead of watching the front. -->
+  <sc-if value="{{ showLessonMenu }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height: 100vh; padding: 32px 22px 90px;">
+      <div style="max-width: 760px; margin: 0 auto;">
+        <button onClick="{{ closeLesson }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.12em; color: #6B6252; padding: 0 0 22px; min-height: 44px;">&larr; ALL LESSONS</button>
+        <div style="font: 600 12px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #E4572E;">{{ lessonLo }}</div>
+        <h1 style="margin: 10px 0 8px; font-family: 'Source Serif 4', Georgia, serif; font-size: 34px; font-weight: 600; letter-spacing: -0.01em;">{{ menuTitle }}</h1>
+        <p style="margin: 0 0 26px; font: 500 13px 'IBM Plex Mono', monospace; color: #9A907C;">{{ menuSub }}</p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <sc-for list="{{ menuCards }}" as="m" hint-placeholder-count="3">
+            <button onClick="{{ m.onGo }}" style="text-align: left; width: 100%; cursor: pointer; background: #FFFDF7; border: 1px solid #E2DACA; border-left: 5px solid {{ m.accent }}; border-radius: 9px; padding: 22px 24px; display: flex; align-items: center; gap: 20px; min-height: 92px;">
+              <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 7px;">
+                <span style="font-family: 'Source Serif 4', Georgia, serif; font-size: 22px; font-weight: 600; line-height: 1.25; color: #211F1B;">{{ m.title }}</span>
+                <span style="font-size: 15px; line-height: 1.55; color: #6B6252;">{{ m.desc }}</span>
+                <span style="font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.06em; color: #9A907C;">{{ m.meta }}</span>
+              </span>
+              <span style="flex: 0 0 auto; font-size: 22px; color: #E4572E;">&rarr;</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ==================== HANDOUT ON ITS OWN ==================== -->
+  <sc-if value="{{ showHandoutOnly }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height: 100vh; background: #F4F1EA;">
+      <div style="display: flex; align-items: center; gap: 14px; padding: 0 18px; height: 56px; background: #17150F; color: #F4F1EA; position: sticky; top: 0; z-index: 10;">
+        <button onClick="{{ backToMenu }}" style="border: 1px solid rgba(244,241,234,0.25); background: none; cursor: pointer; color: rgba(244,241,234,0.75); border-radius: 6px; padding: 9px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; white-space: nowrap; flex: 0 0 auto; min-height: 40px;">&larr; BACK</button>
+        <span style="font: 600 12px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #E4572E; flex: 0 0 auto;">{{ lessonLo }}</span>
+        <span style="font-size: 14px; opacity: 0.6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ menuTitle }}</span>
+      </div>
+
+      <sc-if value="{{ hasSaveErr }}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 13px 18px; background: #8C2F1B; color: #FFF6F3; font-size: 14px; line-height: 1.55;">{{ saveErr }}</div>
+      </sc-if>
+
+      <div style="max-width: 720px; margin: 0 auto; padding: 26px 22px 100px;">
+        <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">YOUR HANDOUT</div>
+        <p style="margin: 9px 0 4px; font-size: 15px; line-height: 1.6; color: #6B6252;">{{ handoutIntro }}</p>
+
+        <sc-if value="{{ hasPrompts }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <sc-for list="{{ prompts }}" as="p" hint-placeholder-count="6">
+              <div style="padding: 22px 0; border-bottom: 1px solid #E2DACA;">
+                <div style="display: flex; align-items: baseline; gap: 11px; margin-bottom: 13px;">
+                  <span style="font: 600 12px 'IBM Plex Mono', monospace; color: {{ p.dotCol }}; flex: 0 0 auto;">{{ p.num }}</span>
+                  <span style="font-size: 17px; line-height: 1.5; font-weight: 500; color: #211F1B;">{{ p.text }}</span>
+                </div>
+                {{ p.control }}
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 9px;">
+                  <sc-if value="{{ p.hasJump }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ p.onJump }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; color: #E4572E; padding: 6px 0; min-height: 40px;">Show me {{ p.jumpLabel }}</button>
+                  </sc-if>
+                  <span style="font: 500 11px 'IBM Plex Mono', monospace; color: {{ p.stateCol }}; margin-left: auto;">{{ p.stateLabel }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ==================== ANIMATIONS ==================== -->
+  <sc-if value="{{ showAnims }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height: 100vh; background: #F4F1EA;">
+      <div style="display: flex; align-items: center; gap: 14px; padding: 0 18px; height: 56px; background: #17150F; color: #F4F1EA; position: sticky; top: 0; z-index: 10;">
+        <button onClick="{{ backToMenu }}" style="border: 1px solid rgba(244,241,234,0.25); background: none; cursor: pointer; color: rgba(244,241,234,0.75); border-radius: 6px; padding: 9px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; white-space: nowrap; flex: 0 0 auto; min-height: 40px;">&larr; BACK</button>
+        <span style="font: 600 12px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #E4572E; flex: 0 0 auto;">{{ lessonLo }}</span>
+        <span style="font-size: 14px; opacity: 0.6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Animations</span>
+      </div>
+      <div style="max-width: 760px; margin: 0 auto; padding: 26px 22px 100px;">
+        <sc-if value="{{ hasAnims }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <sc-for list="{{ animCards }}" as="a" hint-placeholder-count="4">
+              <button onClick="{{ a.onOpen }}" style="text-align: left; width: 100%; cursor: pointer; background: #FFFDF7; border: 1px solid #E2DACA; border-left: 5px solid #3E6B8A; border-radius: 9px; padding: 20px 22px; display: flex; align-items: center; gap: 18px; min-height: 76px;">
+                <span style="flex: 1 1 auto; min-width: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 19px; font-weight: 600; line-height: 1.3; color: #211F1B;">{{ a.label }}</span>
+                <span style="flex: 0 0 auto; font-size: 20px; color: #3E6B8A;">&#9654;</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showAnimPlayer }}" hint-placeholder-val="{{ false }}">
+    <div style="height: 100vh; max-height: 100vh; overflow: hidden; background: #211F1B; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; gap: 14px; padding: 0 18px; height: 56px; background: #17150F; color: #F4F1EA; flex: 0 0 auto;">
+        <button onClick="{{ closeAnim }}" style="border: 1px solid rgba(244,241,234,0.25); background: none; cursor: pointer; color: rgba(244,241,234,0.75); border-radius: 6px; padding: 9px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; white-space: nowrap; flex: 0 0 auto; min-height: 40px;">&larr; BACK</button>
+        <span style="font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ animTitle }}</span>
+      </div>
+      <div style="flex: 1 1 auto; min-height: 0; padding: 14px;">
+        <iframe src="{{ animSrc }}" title="{{ animTitle }}" style="width: 100%; height: 100%; border: 0; display: block; background: #000; border-radius: 10px;"></iframe>
+      </div>
+    </div>
+  </sc-if>
+
   <!-- ==================== LESSON VIEWER ==================== -->
   <sc-if value="{{ showLesson }}" hint-placeholder-val="{{ false }}">
     <div style="height: 100vh; max-height: 100vh; overflow: hidden; background: #211F1B; display: flex; flex-direction: column;">
 
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 16px; height: 56px; background: #17150F; color: #F4F1EA; flex: 0 0 auto;">
         <div style="display: flex; align-items: center; gap: 14px; min-width: 0;">
-          <button onClick="{{ closeLesson }}" style="border: 1px solid rgba(244,241,234,0.25); background: none; cursor: pointer; color: rgba(244,241,234,0.75); border-radius: 6px; padding: 9px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; white-space: nowrap; flex: 0 0 auto;">&larr; EXIT</button>
+          <button onClick="{{ backToMenu }}" style="border: 1px solid rgba(244,241,234,0.25); background: none; cursor: pointer; color: rgba(244,241,234,0.75); border-radius: 6px; padding: 9px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; white-space: nowrap; flex: 0 0 auto;">&larr; BACK</button>
           <span style="font: 600 12px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #E4572E; flex: 0 0 auto;">{{ lessonLo }}</span>
           <span style="font-size: 14px; opacity: 0.6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ lessonSlideLabel }}</span>
         </div>
@@ -212,10 +315,12 @@
                     <span style="font: 600 11px 'IBM Plex Mono', monospace; color: {{ p.dotCol }}; flex: 0 0 auto;">{{ p.num }}</span>
                     <span style="font-size: 15px; line-height: 1.5; font-weight: 500; color: #211F1B;">{{ p.text }}</span>
                   </div>
-                  <textarea value="{{ p.answer }}" onChange="{{ p.onChange }}" rows="4" placeholder="Your answer&hellip;" style="width: 100%; border: 1px solid #E2DACA; border-radius: 7px; padding: 12px 13px; font-size: 16px; line-height: 1.5; background: #FFFFFF; color: #211F1B;"></textarea>
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 7px;">
-                    <button onClick="{{ p.onJump }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; color: #E4572E; padding: 2px 0;">{{ p.jumpLabel }}</button>
-                    <span style="font: 500 11px 'IBM Plex Mono', monospace; color: {{ p.stateCol }};">{{ p.stateLabel }}</span>
+                  {{ p.control }}
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 7px;">
+                    <sc-if value="{{ p.hasJump }}" hint-placeholder-val="{{ true }}">
+                      <button onClick="{{ p.onJump }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; color: #E4572E; padding: 2px 0;">{{ p.jumpLabel }}</button>
+                    </sc-if>
+                    <span style="font: 500 11px 'IBM Plex Mono', monospace; color: {{ p.stateCol }}; margin-left: auto;">{{ p.stateLabel }}</span>
                   </div>
                 </div>
               </sc-for>
@@ -375,6 +480,9 @@
                           <span style="font-size: 15px; font-weight: 500; line-height: 1.5; color: #211F1B;">{{ a.text }}</span>
                         </div>
                         <div style="font-size: 16px; line-height: 1.6; color: {{ a.answerCol }}; font-style: {{ a.answerStyle }}; white-space: pre-wrap;">{{ a.answer }}</div>
+                        <sc-if value="{{ a.hasMark }}" hint-placeholder-val="{{ false }}">
+                          <div style="display: inline-block; margin-top: 11px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; padding: 5px 10px; border-radius: 4px; background: {{ a.markBg }}; color: {{ a.markCol }};">{{ a.markLabel }}</div>
+                        </sc-if>
                       </div>
                     </sc-for>
                   </div>
@@ -538,6 +646,10 @@ class Component extends DCLogic {
     view: 'dash', liveLo: 'LO1', refreshing: false, loPrompts: null,
     profiles: [], progress: [], handouts: [], roster: [],
     lessonLo: null, lesson: null, slide: 0, handoutOpen: false, answers: {},
+    // Opening a lesson lands on a chooser, not straight in the slides. During a
+    // taught lesson the instructor wants cadets on the handout, looking up - not
+    // reading ahead on their own screen.
+    lessonMode: 'menu', animOpen: null,
     saveState: {}, saveErr: '', configErr: '',
     rService: '', rSurname: '', rEmail: '', rFlight: '', rStaff: false,
     rosterMsg: '', rosterOk: false, loadErr: '',
@@ -711,7 +823,8 @@ class Component extends DCLogic {
   async openLesson(lo) {
     // Everything loaded from the database counts as saved; start from a clean
     // slate so a failure carried over from the last lesson cannot mislead.
-    this.setState({ lessonLo: lo, lesson: null, slide: 0, saveState: {}, saveErr: '' });
+    this.setState({ lessonLo: lo, lesson: null, slide: 0, saveState: {}, saveErr: '',
+                    lessonMode: 'menu', animOpen: null });
     try {
       const res = await fetch('./lessons/' + lo + '.json');
       if (!res.ok) throw new Error('lesson file ' + res.status);
@@ -728,7 +841,16 @@ class Component extends DCLogic {
     }
   }
 
-  closeLesson() { this.setState({ lesson: null, lessonLo: null, handoutOpen: false }); this.loadAll(); }
+  closeLesson() { this.setState({ lesson: null, lessonLo: null, handoutOpen: false, lessonMode: 'menu', animOpen: null }); this.loadAll(); }
+
+  /* The chooser is the hub of a lesson: everything backs out to it, and only
+     "exit" leaves altogether. Progress is written on the way out of the slides
+     so a cadet who reads a few slides then switches to the handout is not
+     recorded as having stopped where they happened to leave off. */
+  setLessonMode(m) { this.setState({ lessonMode: m, animOpen: null }); }
+  backToMenu() { this.setState({ lessonMode: 'menu', animOpen: null, handoutOpen: false }); }
+  openAnim(file) { this.setState({ animOpen: file }); }
+  closeAnim() { this.setState({ animOpen: null }); }
 
   nav(d) {
     const s = this.state;
@@ -797,9 +919,14 @@ class Component extends DCLogic {
     const isLive = s.mode === 'live';
     const signedIn = !!u && !u.unclaimed;
     const showSetup = s.setupOpen;
-    const showLesson = signedIn && !!s.lesson && !showSetup;
+    const inLesson = signedIn && !!s.lesson && !showSetup;
+    const showLessonMenu = inLesson && s.lessonMode === 'menu';
+    const showLesson = inLesson && s.lessonMode === 'slides';
+    const showHandoutOnly = inLesson && s.lessonMode === 'handout';
+    const showAnims = inLesson && s.lessonMode === 'anims' && !s.animOpen;
+    const showAnimPlayer = inLesson && s.lessonMode === 'anims' && !!s.animOpen;
     const showAuth = !s.booting && !showSetup && !signedIn;
-    const showApp = signedIn && !showLesson && !showSetup;
+    const showApp = signedIn && !inLesson && !showSetup;
     const isStaff = signedIn && !!u.is_staff;
 
     const pill = (on) => on
@@ -836,10 +963,13 @@ class Component extends DCLogic {
 
       prompts = (s.lesson.prompts || []).map((p, i) => {
         const val = s.answers[p.key] || '';
-        const answered = val.trim().length > 3;
-        // The label now reports what the DATABASE did, not how much text is in
-        // the box. No entry in saveState means it came back from the database
-        // on open, so it is already saved.
+        // Any mark counts as answered. The old test was "more than 3 characters",
+        // which was fine when every prompt was an essay box but would score a
+        // bearing of 045, or a multiple-choice "B", as not attempted.
+        const answered = val.trim().length > 0;
+        // The label reports what the DATABASE did, not how much text is in the
+        // box. No entry in saveState means it came back from the database on
+        // open, so it is already saved.
         const st = (s.saveState || {})[p.key];
         const failed = st === 'failed';
         const label = failed ? 'NOT SAVED'
@@ -847,14 +977,59 @@ class Component extends DCLogic {
           : answered ? 'SAVED' : 'NOT ANSWERED';
         return {
           num: String(i + 1).padStart(2, '0'), text: p.text, answer: val,
+          control: promptControl(p, val, (v) => this.setAnswer(p.key, v)),
           dotCol: failed ? '#8C2F1B' : answered ? '#4C7A4F' : '#E4572E',
-          onChange: (e) => this.setAnswer(p.key, e.target.value),
-          onJump: () => this.goSlide(Math.min(p.afterSlide, s.lesson.slides.length - 1)),
+          // Works from either screen: from the handout it switches to the slides
+          // at the right place, which is what "show me that slide" means.
+          onJump: () => { this.setState({ lessonMode: 'slides' }); this.goSlide(Math.min(p.afterSlide, s.lesson.slides.length - 1)); },
           jumpLabel: 'Slide ' + (p.afterSlide + 1),
+          hasJump: typeof p.afterSlide === 'number',
           stateLabel: label,
           stateCol: failed ? '#8C2F1B' : st === 'pending' ? '#9A907C' : answered ? '#4C7A4F' : '#9A907C',
         };
       });
+    }
+
+    /* -- the chooser that now sits between a lesson card and its content -- */
+    let menuTitle = '', menuSub = '', menuCards = [], animCards = [], animTitle = '', animSrc = '';
+    if (s.lesson) {
+      const slides = s.lesson.slides || [];
+      const answeredN = prompts.filter(p => (p.answer || '').trim().length > 0).length;
+      // One card per animation, not per slide: an animation used on two slides
+      // should still be one thing to pick from.
+      const seen = {};
+      slides.forEach((sl) => {
+        if (!sl.anim || seen[sl.anim]) return;
+        seen[sl.anim] = true;
+        animCards.push({
+          file: sl.anim,
+          label: String(sl.anim).replace(/\.html$/i, '').replace(/^Nav LO\d+ - /i, ''),
+          onOpen: () => this.openAnim(sl.anim),
+        });
+      });
+
+      menuTitle = TITLES[s.lessonLo] || '';
+      menuSub = slides.length + ' slides · ' + prompts.length + ' handout questions · ' + animCards.length + ' animations';
+      menuCards = [
+        { key: 'handout', title: 'Handout',
+          desc: 'The questions on their own. Use this one while your instructor is teaching.',
+          meta: prompts.length ? (answeredN + ' of ' + prompts.length + ' answered') : 'No questions yet',
+          accent: '#E4572E', onGo: () => this.setLessonMode('handout') },
+        { key: 'slides', title: 'Lesson',
+          desc: 'The slides, the same ones on the projector. Work through them at your own pace.',
+          meta: slides.length + ' slides',
+          accent: '#4C7A4F', onGo: () => this.setLessonMode('slides') },
+        { key: 'anims', title: 'Animations',
+          desc: 'The moving diagrams on their own, to replay as many times as you like.',
+          meta: animCards.length ? (animCards.length + ' to watch') : 'None in this lesson',
+          accent: '#3E6B8A', onGo: () => this.setLessonMode('anims') },
+      ];
+
+      if (s.animOpen) {
+        animSrc = './anim/' + encodeURIComponent(s.animOpen);
+        const card = animCards.find(a => a.file === s.animOpen);
+        animTitle = card ? card.label : s.animOpen;
+      }
     }
 
     /* -- lesson cards -- */
@@ -909,7 +1084,9 @@ class Component extends DCLogic {
     const loPrompts = s.loPrompts || [];
     const total = loPrompts.length;
     const liveRows = cadets.map(c => {
-      const answered = (s.handouts || []).filter(h => h.cadet_id === c.id && h.lo === s.liveLo && (h.answer || '').trim().length > 3).length;
+      // Same "any mark counts" test the cadet's own handout uses. The old
+      // "more than 3 characters" would not have counted a bearing of 045.
+      const answered = (s.handouts || []).filter(h => h.cadet_id === c.id && h.lo === s.liveLo && (h.answer || '').trim().length > 0).length;
       const prog = (byCadet[c.id] || []).find(p => p.lo === s.liveLo);
       const pct = total ? Math.round((answered / total) * 100) : 0;   // total is 0 until the lesson file lands
       return {
@@ -935,13 +1112,21 @@ class Component extends DCLogic {
       (s.handouts || []).forEach(h => { if (h.cadet_id === lc.id && h.lo === s.liveLo) mine[h.prompt_key] = h.answer; });
       cadetAnswers = loPrompts.map((p, i) => {
         const a = (mine[p.key] || '').trim();
+        // Where the lesson file states the expected answer, mark it, so a room
+        // full of multiple choice can be read at a glance instead of one by one.
+        // Written answers have no expected value and are never marked.
+        const mark = markAnswer(p, a);
         return {
           num: String(i + 1).padStart(2, '0'),
           text: p.text,
-          answer: a || 'Not answered yet',
+          answer: p.type === 'task' ? (a ? 'Done' : 'Not done yet') : (a || 'Not answered yet'),
           answerCol: a ? '#211F1B' : '#9A907C',
           answerStyle: a ? 'normal' : 'italic',
-          barCol: a ? '#4C7A4F' : '#E2DACA',
+          barCol: mark === 'wrong' ? '#8C2F1B' : a ? '#4C7A4F' : '#E2DACA',
+          hasMark: !!mark,
+          markLabel: mark === 'right' ? '✓ CORRECT' : mark === 'wrong' ? '✗ EXPECTED: ' + p.answer : '',
+          markCol: mark === 'right' ? '#2F5A33' : '#8C2F1B',
+          markBg: mark === 'right' ? '#ECF3EC' : '#FBEDE9',
         };
       });
     }
@@ -955,6 +1140,7 @@ class Component extends DCLogic {
 
     return {
       booting: s.booting, showAuth, showApp, showSetup, showLesson,
+      showLessonMenu, showHandoutOnly, showAnims, showAnimPlayer,
       isLive, isDemo: !isLive, isStaff, isCadet: signedIn && !isStaff,
 
       /* auth */
@@ -1055,11 +1241,118 @@ class Component extends DCLogic {
       handoutOpen: s.handoutOpen,
       toggleHandout: () => this.setState({ handoutOpen: !s.handoutOpen }),
       hasSaveErr: !!s.saveErr, saveErr: s.saveErr,
+
+      /* chooser, handout-on-its-own, animations */
+      menuTitle, menuSub, menuCards, animCards, animTitle, animSrc,
+      backToMenu: () => this.backToMenu(),
+      closeAnim: () => this.closeAnim(),
+      hasPrompts: prompts.length > 0,
+      hasAnims: animCards.length > 0,
+      handoutIntro: 'Answer these as your instructor teaches. Each one saves by itself. If you want to see the slide a question came from, tap the slide link under it.',
+
       handoutBtnLabel: s.handoutOpen ? 'Hide handout' : 'Handout',
       handoutBtnBg: s.handoutOpen ? '#F4F1EA' : 'rgba(244,241,234,0.14)',
       handoutBtnCol: s.handoutOpen ? '#211F1B' : '#F4F1EA',
     };
   }
+}
+
+/* Mark one answer against the expected value in the lesson file, for the staff
+   view only - cadets are never shown right or wrong, so the instructor keeps
+   control of when the answer is given out. Returns '' when there is nothing to
+   mark, which is every written answer and anything left blank.
+
+   A number is compared numerically within its stated tolerance, so 045 and 45
+   both count, and "within 5 degrees" can be asked for honestly. */
+function markAnswer(p, given) {
+  if (!p || !p.answer || !given) return '';
+  if (p.type === 'number') {
+    const g = parseFloat(String(given).replace(/[^0-9.\-]/g, ''));
+    const want = parseFloat(String(p.answer).replace(/[^0-9.\-]/g, ''));
+    if (isNaN(g) || isNaN(want)) return '';
+    return Math.abs(g - want) <= (typeof p.tolerance === 'number' ? p.tolerance : 0) ? 'right' : 'wrong';
+  }
+  const norm = (x) => String(x).trim().toLowerCase().replace(/\s+/g, ' ');
+  return norm(given) === norm(p.answer) ? 'right' : 'wrong';
+}
+
+/* One handout question's input, by type. Built here rather than in the template
+   because multiple choice needs a list inside a list and sc-for does not nest.
+
+   Every type stores a plain string in handout_responses.answer - the chosen
+   option's own text, 'done' for a task, the digits for a number - so none of
+   this needed a database change, and a prompt with no "type" is a long answer,
+   exactly as before. */
+function promptControl(p, val, onSet) {
+  const h = React.createElement;
+  const box = {
+    width: '100%', border: '1px solid #E2DACA', borderRadius: 7, padding: '12px 13px',
+    fontSize: 16, lineHeight: 1.5, background: '#FFFFFF', color: '#211F1B',
+    fontFamily: 'inherit', minHeight: 44,
+  };
+
+  if (p.type === 'choice') {
+    return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+      (p.options || []).map((opt, i) => {
+        const on = val === opt;
+        return h('button', {
+          key: i, onClick: () => onSet(on ? '' : opt),   // tap again to clear
+          style: Object.assign({}, box, {
+            cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 11,
+            minHeight: 48,
+            borderColor: on ? '#211F1B' : '#E2DACA',
+            background: on ? '#211F1B' : '#FFFFFF',
+            color: on ? '#F4F1EA' : '#211F1B',
+          }),
+        },
+          h('span', { style: { flex: '0 0 auto', width: 21, height: 21, borderRadius: 11,
+            border: '2px solid ' + (on ? '#F4F1EA' : '#C9C0AC'),
+            background: on ? '#E4572E' : 'transparent' } }),
+          h('span', { style: { flex: '1 1 auto' } }, opt));
+      }));
+  }
+
+  if (p.type === 'task') {
+    const done = (val || '').trim().length > 0;
+    return h('button', {
+      onClick: () => onSet(done ? '' : 'done'),
+      style: Object.assign({}, box, {
+        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 11, minHeight: 52,
+        fontWeight: 500, textAlign: 'left',
+        borderColor: done ? '#4C7A4F' : '#E2DACA',
+        background: done ? '#ECF3EC' : '#FFFFFF',
+        color: done ? '#2F5A33' : '#6B6252',
+      }),
+    },
+      h('span', { style: { flex: '0 0 auto', width: 23, height: 23, borderRadius: 5,
+        border: '2px solid ' + (done ? '#4C7A4F' : '#C9C0AC'),
+        background: done ? '#4C7A4F' : 'transparent', color: '#FFFFFF',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 14, lineHeight: 1 } }, done ? '✓' : ''),
+      h('span', { style: { flex: '1 1 auto' } }, done ? 'Done' : 'Tick when you have done this'));
+  }
+
+  if (p.type === 'number') {
+    return h('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
+      h('input', {
+        value: val, onChange: (e) => onSet(e.target.value),
+        inputMode: 'decimal', autoComplete: 'off', placeholder: p.placeholder || '',
+        style: Object.assign({}, box, { maxWidth: 200, fontFamily: "'IBM Plex Mono', monospace" }),
+      }),
+      p.unit ? h('span', { style: { font: "500 16px 'IBM Plex Mono', monospace", color: '#6B6252', flex: '0 0 auto' } }, p.unit) : null);
+  }
+
+  if (p.type === 'short') {
+    return h('input', {
+      value: val, onChange: (e) => onSet(e.target.value), autoComplete: 'off',
+      placeholder: p.placeholder || 'Your answer…', style: box,
+    });
+  }
+
+  return h('textarea', {
+    value: val, onChange: (e) => onSet(e.target.value), rows: p.rows || 4,
+    placeholder: 'Your answer…', style: Object.assign({}, box, { minHeight: 96 }),
+  });
 }
 
 /* What to tell a cadet when a save is refused. Plain language, and it says the
