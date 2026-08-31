@@ -20,6 +20,6 @@
      NEVER put a secret key here. Secret keys ignore those rules entirely.
    ============================================================================ */
 window.HUB_CONFIG = {
-  url: '',
-  publishableKey: '',
+  url: https://wkpbuijctawdngcafiex.supabase.co'',
+  publishableKey: 'sb_publishable_oyQZES6wQ1SArkhtUWfmrA_tm6EPbS-',
 };
