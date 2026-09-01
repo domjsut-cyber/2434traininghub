@@ -274,11 +274,44 @@
       await c.auth.signOut();
     },
 
+    /* Deliberately NOT wired up to anything. The squadron does not run an email
+       system, and this project's Supabase has mailer_autoconfirm on, so no mail
+       is ever sent: an address exists only as Supabase's required username and
+       as the third thing claim_account matches. A reset link would also need a
+       screen to land on and set the new password, which there is not.
+
+       Kept, commented, so that whoever turns email on later finds the hook
+       rather than reinventing it. A forgotten password is handled by staff
+       setting a new one in the Supabase dashboard; the cadet then changes it
+       with changePassword below. */
     async resetPassword(email) {
       if (!this.isLive()) return true;
       const c = await client();
       const { error } = await c.auth.resetPasswordForEmail(email.trim());
       if (error) throw new Error(error.message);
+      return true;
+    },
+
+    /* Change your own password. Needs no email and no secret key - an active
+       session is what Supabase accepts as proof.
+
+       The current password is checked first, by signing in with it. These are
+       shared classroom tablets: without that check, anyone who found a signed-in
+       screen left unattended could lock the cadet out of their own account. A
+       failed sign-in leaves the existing session alone. */
+    async changePassword(currentPw, newPw) {
+      if (!this.isLive()) {
+        if (!currentPw) throw new Error('Put your current password in first.');
+        return true;
+      }
+      const c = await requireSession();
+      const { data: { user } } = await c.auth.getUser();
+      if (!user || !user.email)
+        throw new Error('Could not check your account just now. Sign out, sign in again, and try once more.');
+      const { error: vErr } = await c.auth.signInWithPassword({ email: user.email, password: currentPw });
+      if (vErr) throw new Error('That is not your current password.');
+      const { error } = await c.auth.updateUser({ password: newPw });
+      if (error) throw new Error(friendly(error.message));
       return true;
     },
 

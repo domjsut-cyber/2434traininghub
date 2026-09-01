@@ -90,7 +90,7 @@
             <button onClick="{{ doAuth }}" style="border: 0; cursor: pointer; background: #211F1B; color: #F4F1EA; padding: 16px; border-radius: 8px; font: 500 16px 'IBM Plex Sans', sans-serif; margin-top: 4px;">{{ authBtnLabel }}</button>
 
             <sc-if value="{{ isSignIn }}" hint-placeholder-val="{{ true }}">
-              <button onClick="{{ doReset }}" style="border: 0; background: none; cursor: pointer; font-size: 14px; color: #6B6252; padding: 4px; text-align: center;">Forgotten your password?</button>
+              <div style="font-size: 14px; line-height: 1.55; color: #6B6252; text-align: center; padding: 4px 2px;">Forgotten your password? Ask your staff &mdash; they can give you a new one, and you can change it to your own once you are back in.</div>
             </sc-if>
           </div>
         </div>
@@ -160,6 +160,44 @@
               <button onClick="{{ disconnect }}" style="border: 1px solid #E2DACA; cursor: pointer; background: #FFFFFF; color: #8C2F1B; padding: 14px 22px; border-radius: 8px; font: 500 15px 'IBM Plex Sans', sans-serif;">Disconnect</button>
             </sc-if>
           </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ==================== CHANGE YOUR PASSWORD ====================
+       No "forgotten password" anywhere: that needs an email out, and the
+       squadron has no email system. Staff issue a new one from the Supabase
+       dashboard and the cadet changes it here. -->
+  <sc-if value="{{ showPassword }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height: 100vh; padding: 44px 20px 80px; display: flex; justify-content: center;">
+      <div style="width: 100%; max-width: 520px;">
+        <button onClick="{{ closePw }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.12em; color: #6B6252; padding: 0 0 22px; min-height: 44px;">&larr; BACK</button>
+        <h1 style="margin: 0 0 10px; font-family: 'Source Serif 4', Georgia, serif; font-size: 31px; font-weight: 600;">Change your password</h1>
+        <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #6B6252;">Pick something you will remember. If you have forgotten the one you have, your staff can give you a new one &mdash; then come back here and change it.</p>
+
+        <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 10px; padding: 24px 26px; display: flex; flex-direction: column; gap: 17px;">
+          <label style="display: flex; flex-direction: column; gap: 7px;">
+            <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">THE PASSWORD YOU USE NOW</span>
+            <input value="{{ pwCurrent }}" onChange="{{ onPwCurrent }}" type="password" autoComplete="current-password" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 14px; font-size: 16px; background: #FFFFFF; color: #211F1B; min-height: 44px;" />
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 7px;">
+            <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">YOUR NEW PASSWORD</span>
+            <input value="{{ pwNew }}" onChange="{{ onPwNew }}" type="password" autoComplete="new-password" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 14px; font-size: 16px; background: #FFFFFF; color: #211F1B; min-height: 44px;" />
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 7px;">
+            <span style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #9A907C;">TYPE IT ONCE MORE</span>
+            <input value="{{ pwConfirm }}" onChange="{{ onPwConfirm }}" type="password" autoComplete="new-password" style="border: 1px solid #E2DACA; border-radius: 7px; padding: 14px; font-size: 16px; background: #FFFFFF; color: #211F1B; min-height: 44px;" />
+          </label>
+
+          <sc-if value="{{ hasPwErr }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size: 14px; line-height: 1.5; color: #8C2F1B; background: #FBEDE9; border: 1px solid #F0CFC6; padding: 12px 14px; border-radius: 7px;">{{ pwErr }}</div>
+          </sc-if>
+          <sc-if value="{{ hasPwOk }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size: 14px; line-height: 1.5; color: #2F5A33; background: #ECF3EC; border: 1px solid #CFE0D0; padding: 12px 14px; border-radius: 7px;">{{ pwOk }}</div>
+          </sc-if>
+
+          <button onClick="{{ doChangePw }}" style="border: 0; cursor: pointer; background: #211F1B; color: #F4F1EA; padding: 15px; border-radius: 8px; font: 500 16px 'IBM Plex Sans', sans-serif; min-height: 48px;">{{ pwBtnLabel }}</button>
         </div>
       </div>
     </div>
@@ -382,6 +420,7 @@
           <sc-if value="{{ showPreviewBtn }}" hint-placeholder-val="{{ true }}">
             <button onClick="{{ startPreview }}" style="border: 1px solid rgba(244,241,234,0.3); background: none; cursor: pointer; color: rgba(244,241,234,0.8); border-radius: 6px; padding: 8px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; min-height: 40px; white-space: nowrap; flex: 0 0 auto;">VIEW AS CADET</button>
           </sc-if>
+          <button onClick="{{ openPw }}" style="border: 1px solid rgba(244,241,234,0.25); background: none; cursor: pointer; color: rgba(244,241,234,0.7); border-radius: 6px; padding: 8px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; min-height: 40px; white-space: nowrap; flex: 0 0 auto;">PASSWORD</button>
           <span style="font-size: 14px; opacity: 0.75; white-space: nowrap;">{{ userName }}</span>
           <span style="font: 500 10px 'IBM Plex Mono', monospace; letter-spacing: 0.12em; padding: 4px 8px; border-radius: 4px; background: {{ roleBadgeBg }}; color: {{ roleBadgeCol }};">{{ roleBadge }}</span>
           <button onClick="{{ doSignOut }}" style="border: 1px solid rgba(244,241,234,0.25); background: none; cursor: pointer; color: rgba(244,241,234,0.7); border-radius: 6px; padding: 8px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; min-height: 40px; white-space: nowrap; flex: 0 0 auto;">SIGN OUT</button>
@@ -702,6 +741,7 @@ class Component extends DCLogic {
     lessonMode: 'menu', animOpen: null,
     saveState: {}, saveErr: '', configErr: '',
     resetOpen: false, resetBusy: false, resetErr: '', staffResetMsg: '',
+    pwOpen: false, pwCurrent: '', pwNew: '', pwConfirm: '', pwBusy: false, pwErr: '', pwOk: '',
     rService: '', rSurname: '', rEmail: '', rFlight: '', rStaff: false,
     rosterMsg: '', rosterOk: false, loadErr: '',
     liveCadet: null,
@@ -793,11 +833,25 @@ class Component extends DCLogic {
     }
   }
 
-  async doReset() {
-    const D = window.HubData;
-    if (!this.state.fEmail.trim()) { this.setState({ authErr: 'Put your email in first, then tap this again.' }); return; }
-    try { await D.resetPassword(this.state.fEmail); this.setState({ authErr: 'Reset link sent. Check your email.' }); }
-    catch (e) { this.setState({ authErr: e.message }); }
+  /* Change your own password. There is no "forgotten password" path: that needs
+     an email out, and the squadron has no email system. A cadet who is locked
+     out is given a new password by staff in the Supabase dashboard, then comes
+     here to set one of their own. */
+  async doChangePassword() {
+    const s = this.state, D = window.HubData;
+    if (s.pwBusy) return;
+    if (!s.pwCurrent) { this.setState({ pwErr: 'Put your current password in first.', pwOk: '' }); return; }
+    if (s.pwNew.length < 6) { this.setState({ pwErr: 'Your new password needs to be at least 6 characters.', pwOk: '' }); return; }
+    if (s.pwNew !== s.pwConfirm) { this.setState({ pwErr: 'The two new passwords do not match. Type them again.', pwOk: '' }); return; }
+    if (s.pwNew === s.pwCurrent) { this.setState({ pwErr: 'That is the password you already have. Pick a different one.', pwOk: '' }); return; }
+    this.setState({ pwBusy: true, pwErr: '', pwOk: '' });
+    try {
+      await D.changePassword(s.pwCurrent, s.pwNew);
+      this.setState({ pwBusy: false, pwCurrent: '', pwNew: '', pwConfirm: '',
+        pwOk: 'Done. Use your new password next time you sign in.' });
+    } catch (e) {
+      this.setState({ pwBusy: false, pwErr: (e && e.message) || String(e), pwOk: '' });
+    }
   }
 
   async doSignOut() {
@@ -1009,14 +1063,15 @@ class Component extends DCLogic {
     const isLive = s.mode === 'live';
     const signedIn = !!u && !u.unclaimed;
     const showSetup = s.setupOpen;
-    const inLesson = signedIn && !!s.lesson && !showSetup;
+    const showPassword = signedIn && !!s.pwOpen && !showSetup;
+    const inLesson = signedIn && !!s.lesson && !showSetup && !showPassword;
     const showLessonMenu = inLesson && s.lessonMode === 'menu';
     const showLesson = inLesson && s.lessonMode === 'slides';
     const showHandoutOnly = inLesson && s.lessonMode === 'handout';
     const showAnims = inLesson && s.lessonMode === 'anims' && !s.animOpen;
     const showAnimPlayer = inLesson && s.lessonMode === 'anims' && !!s.animOpen;
     const showAuth = !s.booting && !showSetup && !signedIn;
-    const showApp = signedIn && !inLesson && !showSetup;
+    const showApp = signedIn && !inLesson && !showSetup && !showPassword;
     const isStaff = signedIn && !!u.is_staff;
     /* "View as cadet" is a preview of the interface, nothing more. The account
        is still staff as far as the database is concerned - row-level security
@@ -1245,7 +1300,18 @@ class Component extends DCLogic {
 
     return {
       booting: s.booting, showAuth, showApp, showSetup, showLesson,
-      showLessonMenu, showHandoutOnly, showAnims, showAnimPlayer,
+      showLessonMenu, showHandoutOnly, showAnims, showAnimPlayer, showPassword,
+
+      /* change your own password */
+      openPw: () => this.setState({ pwOpen: true, pwErr: '', pwOk: '', pwCurrent: '', pwNew: '', pwConfirm: '' }),
+      closePw: () => this.setState({ pwOpen: false }),
+      pwCurrent: s.pwCurrent, pwNew: s.pwNew, pwConfirm: s.pwConfirm,
+      onPwCurrent: (e) => this.setState({ pwCurrent: e.target.value }),
+      onPwNew: (e) => this.setState({ pwNew: e.target.value }),
+      onPwConfirm: (e) => this.setState({ pwConfirm: e.target.value }),
+      doChangePw: () => this.doChangePassword(),
+      pwBtnLabel: s.pwBusy ? 'Working…' : 'Change my password',
+      hasPwErr: !!s.pwErr, pwErr: s.pwErr, hasPwOk: !!s.pwOk, pwOk: s.pwOk,
       isLive, isDemo: !isLive, isStaff: staffUI, isCadet: signedIn && !staffUI,
       showPreviewBtn: isStaff && !previewing, previewing,
       startPreview: () => this.setState({ viewAsCadet: true, view: 'dash', liveCadet: null }),
@@ -1263,7 +1329,7 @@ class Component extends DCLogic {
       onSurname: (e) => this.setState({ fSurname: e.target.value }),
       onDisplay: (e) => this.setState({ fDisplay: e.target.value }),
       onAuthKey: (e) => { if (e.key === 'Enter') this.doAuth(); },
-      doAuth: () => this.doAuth(), doReset: () => this.doReset(),
+      doAuth: () => this.doAuth(),
       authErr: s.authErr, hasAuthErr: !!s.authErr,
       authBtnLabel: s.authBusy ? 'Working\u2026' : (s.authTab === 'up' ? 'Create my account' : 'Sign in'),
       emailLabel: isLive ? 'EMAIL' : 'EMAIL (DEMO \u2014 ANY VALUE)',
