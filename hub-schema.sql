@@ -376,6 +376,44 @@ $$;
 revoke all on function public.lesson_questions(text) from public;
 grant execute on function public.lesson_questions(text) to authenticated;
 
+-- ---------------------------------------------------------------------------
+--  ATTENDANCE - who was actually there for which lesson
+--
+--  One row per cadet per learning outcome, so marking someone present later,
+--  when they catch a lesson up, updates the row rather than adding a second
+--  one. noted_on moves with it, which is what you want: the date is when they
+--  did the lesson, not when the register was first opened.
+--
+--  Deliberately NOT worked out from lesson_progress. Opening a lesson at home
+--  on a tablet is not attendance, and a register that quietly promoted one to
+--  the other would be worse than no register. A staff member marks it.
+--
+--  Staff only. Cadets have no reason to read the register, and nothing in the
+--  hub shows it to them.
+-- ---------------------------------------------------------------------------
+create table if not exists public.attendance (
+  id          uuid primary key default gen_random_uuid(),
+  cadet_id    uuid not null references public.profiles(id) on delete cascade,
+  lo          text not null check (lo in ('LO1','LO2','LO3','LO4','LO5')),
+  status      text not null default 'present'
+                check (status in ('present','absent','excused')),
+  noted_on    date not null default current_date,
+  recorded_by uuid references auth.users(id),
+  updated_at  timestamptz not null default now(),
+  unique (cadet_id, lo)
+);
+
+drop trigger if exists trg_touch_attendance on public.attendance;
+create trigger trg_touch_attendance before update on public.attendance
+  for each row execute function public.touch_updated_at();
+
+alter table public.attendance enable row level security;
+
+drop policy if exists attendance_staff_all on public.attendance;
+create policy attendance_staff_all on public.attendance
+  for all to authenticated
+  using (public.is_staff()) with check (public.is_staff());
+
 -- ============================================================================
 --  BOOTSTRAP YOUR FIRST STAFF ACCOUNT
 --

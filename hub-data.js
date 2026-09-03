@@ -446,6 +446,68 @@
           : error.message);
     },
 
+    /* ---- register ----
+       Who was actually there. Staff only, at the database, not just on screen. */
+    async listAttendance(lo) {
+      if (!this.isLive()) return (loadDemo().attendance || []).filter(a => !lo || a.lo === lo);
+      const c = await client();
+      let q = c.from('attendance').select('*');
+      if (lo) q = q.eq('lo', lo);
+      const { data, error } = await q;
+      if (error) {
+        if (/does not exist|schema cache/i.test(error.message))
+          throw new Error('This database has not got the register yet. Run hub-schema.sql in Supabase again - it only adds what is missing.');
+        throw new Error(error.message);
+      }
+      return data || [];
+    },
+
+    /* Mark one cadet. Passing status null clears the mark entirely, which is
+       how "I ticked the wrong name" gets undone - an unmarked cadet is not the
+       same as one marked absent, and the register should be able to say so. */
+    async setAttendance(cadetId, lo, status) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        d.attendance = (d.attendance || []).filter(a => !(a.cadet_id === cadetId && a.lo === lo));
+        if (status) d.attendance.push({ cadet_id: cadetId, lo, status, noted_on: new Date().toISOString().slice(0, 10) });
+        saveDemo(d); return;
+      }
+      const c = await requireSession();
+      if (!status) {
+        const { error } = await c.from('attendance').delete().eq('cadet_id', cadetId).eq('lo', lo);
+        if (error) throw new Error(refused(error.message));
+        return;
+      }
+      const { data: { user } } = await c.auth.getUser();
+      const { error } = await c.from('attendance').upsert({
+        cadet_id: cadetId, lo, status,
+        noted_on: new Date().toISOString().slice(0, 10),
+        recorded_by: user ? user.id : null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'cadet_id,lo' });
+      if (error) throw new Error(refused(error.message));
+    },
+
+    /* Mark the whole flight in one go. A register is nearly all "present", so
+       the useful order is mark everyone, then correct the few who were not. */
+    async markAllAttendance(lo, cadetIds, status) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        d.attendance = (d.attendance || []).filter(a => !(a.lo === lo && cadetIds.indexOf(a.cadet_id) >= 0));
+        cadetIds.forEach(id => d.attendance.push({ cadet_id: id, lo, status, noted_on: new Date().toISOString().slice(0, 10) }));
+        saveDemo(d); return;
+      }
+      if (!cadetIds.length) return;
+      const c = await requireSession();
+      const { data: { user } } = await c.auth.getUser();
+      const now = new Date().toISOString();
+      const { error } = await c.from('attendance').upsert(cadetIds.map(id => ({
+        cadet_id: id, lo, status, noted_on: now.slice(0, 10),
+        recorded_by: user ? user.id : null, updated_at: now,
+      })), { onConflict: 'cadet_id,lo' });
+      if (error) throw new Error(refused(error.message));
+    },
+
     /* ---- lesson questions ----
        The questions live in lessons/LO*.json until staff edit them; from then
        on the database holds them for that LO. The caller decides which to use
