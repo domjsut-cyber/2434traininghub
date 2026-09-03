@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+      booting: s.booting, showAuth, showApp, showSetup, showLesson,<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -781,19 +781,27 @@
                   </sc-if>
                 </div>
 
-                <sc-if value="{{ hasWaiting }}" hint-placeholder-val="{{ false }}">
+                <sc-if value="{{ hasRoster }}" hint-placeholder-val="{{ true }}">
                   <div style="background: #FFFDF7; border: 1px solid #E2DACA; border-radius: 9px; overflow: hidden;">
                     <div style="padding: 18px 24px 14px; border-bottom: 1px solid #E2DACA;">
-                      <h2 style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 20px; font-weight: 600;">On the roster, not signed up yet</h2>
+                      <h2 style="margin: 0 0 6px; font-family: 'Source Serif 4', Georgia, serif; font-size: 20px; font-weight: 600;">The roster</h2>
+                      <p style="margin: 0 0 8px; font: 500 12px 'IBM Plex Mono', monospace; color: #9A907C;">{{ rosterSummary }}</p>
+                      <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #6B6252;">The hub does not give anyone a password &mdash; each cadet chooses their own when they sign up. Putting someone on the roster only gives them permission to; it does not make an account.</p>
                     </div>
-                    <sc-for list="{{ waiting }}" as="w" hint-placeholder-count="3">
-                      <div style="display: flex; align-items: center; gap: 14px; padding: 14px 24px; border-bottom: 1px solid #EFE9DA;">
+                    <sc-for list="{{ rosterAll }}" as="w" hint-placeholder-count="3">
+                      <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 24px; border-bottom: 1px solid #EFE9DA;">
                         <span style="flex: 0 0 auto; font: 500 13px 'IBM Plex Mono', monospace; color: #6B6252;">{{ w.service_number }}</span>
-                        <span style="flex: 1 1 auto; font-size: 15px;">{{ w.surname }}</span>
+                        <span style="flex: 1 1 130px; min-width: 0; display: flex; flex-direction: column; gap: 3px;">
+                          <span style="font-size: 15px;">{{ w.surname }}</span>
+                          <span style="font: 500 11px 'IBM Plex Mono', monospace; color: #B5AC97;">{{ w.emailLabel }}</span>
+                        </span>
                         <sc-if value="{{ w.intended_staff }}" hint-placeholder-val="{{ false }}">
                           <span style="flex: 0 0 auto; font: 500 10px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; padding: 4px 8px; border-radius: 4px; background: #F2E3EF; color: #6B2560;">WILL BE STAFF</span>
                         </sc-if>
-                        <button onClick="{{ w.onRemove }}" style="flex: 0 0 auto; border: 1px solid #E2DACA; background: #FFFFFF; cursor: pointer; color: #8C2F1B; border-radius: 6px; padding: 9px 14px; font: 500 13px 'IBM Plex Sans', sans-serif; min-height: 42px;">Remove</button>
+                        <span style="flex: 0 0 auto; font: 500 10px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; padding: 5px 9px; border-radius: 4px; background: {{ w.statusBg }}; color: {{ w.statusCol }};">{{ w.statusLabel }}</span>
+                        <sc-if value="{{ w.canRemove }}" hint-placeholder-val="{{ true }}">
+                          <button onClick="{{ w.onRemove }}" style="flex: 0 0 auto; border: 1px solid #E2DACA; background: #FFFFFF; cursor: pointer; color: #8C2F1B; border-radius: 6px; padding: 9px 14px; font: 500 13px 'IBM Plex Sans', sans-serif; min-height: 42px;">Remove</button>
+                        </sc-if>
                       </div>
                     </sc-for>
                   </div>
@@ -946,6 +954,23 @@ class Component extends DCLogic {
         ? 'Your sign-in has lapsed. Sign in again - nothing is lost.'
         : 'Could not reach the database: ' + ((e && e.message) || 'unknown error') + '.' +
           ' Your work is safe; try again in a moment.';
+    }
+    /* A Supabase account with no profile: sign-up created the account but
+       claim_account never completed, so this person is half-made. Rather than
+       strand them on a screen of their own, sign them out and point them back
+       at "First time here" - signUp() now recovers an existing account by
+       signing in and finishing the claim, so that one proven form is the only
+       route in, from either direction. */
+    if (user && user.unclaimed) {
+      try { await D.signOut(); } catch (e) { /* the message below still applies */ }
+      this.setState({
+        booting: false, mode: D.mode(), user: null, unclaimed: false,
+        setupUrl: cfg ? cfg.url : '', setupKey: cfg ? cfg.anonKey : '',
+        configErr: D.configError ? D.configError() : '',
+        authTab: 'up',
+        authErr: 'Your account was started but never finished. Use First time here with the same email address and password you used before, and put in the service number and surname your staff hold — that will complete it.',
+      });
+      return;
     }
     this.setState({
       booting: false, mode: D.mode(), user,
@@ -1439,6 +1464,8 @@ class Component extends DCLogic {
     const showAnims = inLesson && s.lessonMode === 'anims' && !s.animOpen;
     const showAnimPlayer = inLesson && s.lessonMode === 'anims' && !!s.animOpen;
     const showPrints = inLesson && s.lessonMode === 'prints';
+    // Signed in to Supabase but with no profile yet: the claim never completed.
+    // They get a screen of their own rather than being bounced back to sign-in.
     const showAuth = !s.booting && !showSetup && !signedIn;
     const showApp = signedIn && !inLesson && !showSetup && !showPassword && !showQuestions && !showRegister;
 
@@ -1612,6 +1639,26 @@ class Component extends DCLogic {
       toggleTitle: p.id === (u||{}).id ? 'You cannot change your own staff status' : 'Staff access',
       onToggle: (e) => this.toggleStaff(p.id, e.target.checked),
     }));
+
+    /* Everyone on the roster, claimed or not. Showing only the unclaimed made
+       a signed-up cadet vanish from the screen, which reads as "it did not
+       work" rather than "it worked". Staff need to see both states. */
+    const rosterAll = (s.roster || []).map(r => {
+      const claimed = !!r.claimed_by;
+      return {
+        service_number: r.service_number, surname: r.surname,
+        intended_staff: !!r.intended_staff,
+        statusLabel: claimed ? 'SIGNED UP' : 'NOT SIGNED UP YET',
+        statusBg: claimed ? '#ECF3EC' : '#F4F1EA',
+        statusCol: claimed ? '#2F5A33' : '#6B6252',
+        // Once claimed the email is erased by design, so there is nothing left
+        // to show and nothing left to leak.
+        emailLabel: claimed ? 'email erased, as designed' : (r.email || 'no email on the roster'),
+        canRemove: !claimed,
+        onRemove: async () => { try { await window.HubData.removeFromRoster(r.id); this.loadAll(); } catch (e) { alert(e.message); } },
+      };
+    });
+    const rosterSignedUp = rosterAll.filter(r => r.statusLabel === 'SIGNED UP').length;
 
     const waiting = (s.roster || []).filter(r => !r.claimed_by).map(r => ({
       service_number: r.service_number, surname: r.surname, intended_staff: !!r.intended_staff,
@@ -1853,6 +1900,8 @@ class Component extends DCLogic {
       statTotal: String(cadets.length), statDone: String(statDone),
       statActive: String(statActive), statNone: String(statNone),
       lessonProgress, people, waiting, hasWaiting: waiting.length > 0,
+      rosterAll, hasRoster: rosterAll.length > 0,
+      rosterSummary: rosterSignedUp + ' of ' + rosterAll.length + ' on the roster have signed up',
 
       /* live */
       loTabs, liveRows,

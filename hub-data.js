@@ -248,7 +248,24 @@
       }
       const c = await client();
       const { error: sErr } = await c.auth.signUp({ email: email.trim(), password });
-      if (sErr) throw new Error(friendly(sErr.message));
+      if (sErr) {
+        if (!/already registered|already exists|user already/i.test(sErr.message))
+          throw new Error(friendly(sErr.message));
+
+        /* "Already registered" was a dead end, and it was one we created.
+           signUp() creates the Supabase account, and claim_account() runs
+           afterwards. If the claim fails - a surname spelt differently on the
+           roster, say - the account is left behind with no profile. Try again
+           and signUp refuses, because the account genuinely does exist. The
+           cadet could then never get in, and no amount of retyping helped.
+
+           So: sign in as them and finish the claim that did not happen. Same
+           password, same person, no new privilege - if the password is wrong,
+           this fails exactly as signing in would. */
+        const { error: iErr } = await c.auth.signInWithPassword({ email: email.trim(), password });
+        if (iErr) throw new Error(
+          'There is already an account for that email address. If it is yours, use Sign in with the password you chose. If you cannot remember it, ask your staff to set you a new one.');
+      }
       // signUp may or may not return an active session depending on the project's
       // email-confirmation setting; make sure we have one before claiming.
       const { data: { session } } = await c.auth.getSession();
