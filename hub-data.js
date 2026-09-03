@@ -446,6 +446,86 @@
           : error.message);
     },
 
+    /* ---- lesson questions ----
+       The questions live in lessons/LO*.json until staff edit them; from then
+       on the database holds them for that LO. The caller decides which to use
+       from whether listQuestions returns anything. */
+
+    /* What a CADET may see: no answers. Goes through lesson_questions(), a
+       SECURITY DEFINER function with a fixed column list, so the expected
+       answers cannot reach a browser even if someone reads the network tab. */
+    async listQuestions(lo) {
+      if (!this.isLive()) return (loadDemo().prompts || []).filter(p => p.lo === lo);
+      const c = await client();
+      const { data, error } = await c.rpc('lesson_questions', { p_lo: lo });
+      if (error) {
+        // The table is new. An older database simply has no such function, and
+        // that is not a failure - it means "no overrides, use the lesson file".
+        if (/does not exist|not find|schema cache/i.test(error.message)) return [];
+        throw new Error(error.message);
+      }
+      return data || [];
+    },
+
+    /* The full rows, answers included. Staff only - the policy on the table
+       refuses everyone else, so this is safe to call and let the database say
+       no rather than deciding in the interface. */
+    async listQuestionsWithAnswers(lo) {
+      if (!this.isLive()) return (loadDemo().prompts || []).filter(p => p.lo === lo);
+      const c = await client();
+      let q = c.from('lesson_prompts').select('*');
+      if (lo) q = q.eq('lo', lo);
+      const { data, error } = await q.order('sort_order');
+      if (error) {
+        if (/does not exist|schema cache/i.test(error.message))
+          throw new Error('This database has not got the questions table yet. Run hub-schema.sql in Supabase again - it only adds what is missing.');
+        throw new Error(error.message);
+      }
+      return data || [];
+    },
+
+    /* Replace every question for one LO in a single go. Delete-then-insert
+       rather than a diff: the editor hands over the whole list, and a partial
+       save that left half the old questions behind would be worse than a
+       failure you can see. */
+    async saveQuestions(lo, rows) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        d.prompts = (d.prompts || []).filter(p => p.lo !== lo).concat(rows.map(r => Object.assign({}, r, { lo })));
+        saveDemo(d); return;
+      }
+      const c = await requireSession();
+      const { data: { user } } = await c.auth.getUser();
+      const del = await c.from('lesson_prompts').delete().eq('lo', lo);
+      if (del.error) throw new Error(refused(del.error.message));
+      if (!rows.length) return;
+      const payload = rows.map((r, i) => ({
+        lo, prompt_key: r.prompt_key, sort_order: i,
+        type: r.type || 'text', text: r.text,
+        options: r.options || [],
+        answer: r.answer || null, model_answer: r.model_answer || null,
+        unit: r.unit || null,
+        tolerance: (r.tolerance === '' || r.tolerance == null) ? null : Number(r.tolerance),
+        needs: r.needs || null,
+        after_slide: (r.after_slide === '' || r.after_slide == null) ? null : Number(r.after_slide),
+        updated_by: user ? user.id : null,
+      }));
+      const { error } = await c.from('lesson_prompts').insert(payload);
+      if (error) throw new Error(refused(error.message));
+    },
+
+    /* Throw the overrides away and go back to the questions in the lesson file. */
+    async resetQuestions(lo) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        d.prompts = (d.prompts || []).filter(p => p.lo !== lo);
+        saveDemo(d); return;
+      }
+      const c = await requireSession();
+      const { error } = await c.from('lesson_prompts').delete().eq('lo', lo);
+      if (error) throw new Error(refused(error.message));
+    },
+
     /* ---- handout ---- */
     async listHandout(cadetId, lo) {
       if (!this.isLive())
@@ -508,6 +588,15 @@
     demoSignInAs(id) { const d = loadDemo(); d.session = id; saveDemo(d); },
     resetDemo() { localStorage.removeItem(DEMO_KEY); },
   };
+
+  /* A refusal from the database, said in a way that points somewhere useful. */
+  function refused(msg) {
+    if (/row-level security/i.test(msg))
+      return 'The database refused this. Only staff can change the questions — if you are staff, your sign-in may have lapsed, so sign out and back in.';
+    if (/does not exist|schema cache/i.test(msg))
+      return 'This database has not got the questions table yet. Run hub-schema.sql in Supabase again — it only adds what is missing.';
+    return msg;
+  }
 
   function friendly(msg) {
     if (/invalid login credentials/i.test(msg)) return 'That email or password is not right.';

@@ -295,6 +295,88 @@ create policy checks_read on public.check_results
   using (cadet_id = auth.uid() or public.is_staff());
 
 -- ============================================================================
+--  LESSON QUESTIONS - staff editing the handout without touching a file
+--
+--  The questions ship in lessons/LO*.json. That is fine until a staff member
+--  wants to change one, or set the right answer, on the night: editing a file
+--  and redeploying is not something to do ten minutes before a parade.
+--
+--  So: if this table has any rows for a learning outcome, they ARE the
+--  questions for it. If it has none, the lesson file is used, exactly as
+--  before. One source of truth per LO, no merging, nothing to reason about.
+--
+--  A NOTE ON THE ANSWERS
+--    answer and model_answer must never reach a cadet's browser. Row-level
+--    security works on rows, not columns, so a cadet who could read the row
+--    could read the answer with it. This table is therefore STAFF ONLY, and
+--    cadets get the questions through lesson_questions() below, which simply
+--    does not select those two columns. Same idea as claim_account(): a narrow
+--    door rather than a wider policy.
+-- ---------------------------------------------------------------------------
+create table if not exists public.lesson_prompts (
+  id           uuid primary key default gen_random_uuid(),
+  lo           text not null check (lo in ('LO1','LO2','LO3','LO4','LO5')),
+  prompt_key   text not null,
+  sort_order   int  not null default 0,
+  type         text not null default 'text'
+                 check (type in ('text','short','number','choice','task')),
+  text         text not null,
+  options      jsonb not null default '[]'::jsonb,   -- choice only
+  answer       text,          -- expected answer. STAFF ONLY.
+  model_answer text,          -- what a good written answer looks like. STAFF ONLY.
+  unit         text,          -- number only, e.g. °
+  tolerance    numeric,       -- number only, how far out still counts as right
+  needs        text,          -- kit the cadet must have in front of them
+  after_slide  int,
+  updated_at   timestamptz not null default now(),
+  updated_by   uuid references auth.users(id),
+  unique (lo, prompt_key)
+);
+
+drop trigger if exists trg_touch_prompts on public.lesson_prompts;
+create trigger trg_touch_prompts before update on public.lesson_prompts
+  for each row execute function public.touch_updated_at();
+
+alter table public.lesson_prompts enable row level security;
+
+-- Staff only, entirely. Cadets never touch this table.
+drop policy if exists prompts_staff_all on public.lesson_prompts;
+create policy prompts_staff_all on public.lesson_prompts
+  for all to authenticated
+  using (public.is_staff()) with check (public.is_staff());
+
+-- The questions as a CADET may see them: no answer, no model answer.
+-- SECURITY DEFINER so it can read past the staff-only policy above, and it
+-- returns a fixed column list so an answer cannot leak by accident.
+create or replace function public.lesson_questions(p_lo text)
+returns table (
+  prompt_key  text,
+  sort_order  int,
+  type        text,
+  text        text,
+  options     jsonb,
+  unit        text,
+  needs       text,
+  after_slide int
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  -- Every column qualified with the alias. The output columns of a RETURNS
+  -- TABLE are names in scope here too, so a bare "text" or "type" could be read
+  -- as either, and this file gets run once against a live squadron database.
+  select q.prompt_key, q.sort_order, q.type, q.text, q.options, q.unit, q.needs, q.after_slide
+    from public.lesson_prompts q
+   where q.lo = p_lo
+   order by q.sort_order, q.prompt_key;
+$$;
+
+revoke all on function public.lesson_questions(text) from public;
+grant execute on function public.lesson_questions(text) to authenticated;
+
+-- ============================================================================
 --  BOOTSTRAP YOUR FIRST STAFF ACCOUNT
 --
 --  Chicken and egg: only staff can create staff, and there are no staff yet.
