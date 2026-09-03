@@ -213,7 +213,13 @@
         <button onClick="{{ closeLesson }}" style="border: 0; background: none; cursor: pointer; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.12em; color: #6B6252; padding: 0 0 22px; min-height: 44px;">&larr; ALL LESSONS</button>
         <div style="font: 600 12px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #E4572E;">{{ lessonLo }}</div>
         <h1 style="margin: 10px 0 8px; font-family: 'Source Serif 4', Georgia, serif; font-size: 34px; font-weight: 600; letter-spacing: -0.01em;">{{ menuTitle }}</h1>
-        <p style="margin: 0 0 26px; font: 500 13px 'IBM Plex Mono', monospace; color: #9A907C;">{{ menuSub }}</p>
+        <p style="margin: 0 0 18px; font: 500 13px 'IBM Plex Mono', monospace; color: #9A907C;">{{ menuSub }}</p>
+
+        <sc-if value="{{ hasNeedsList }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-bottom: 22px; font-size: 14px; line-height: 1.6; color: #6B4A1E; background: #FBF3E4; border: 1px solid #EBDCBE; padding: 13px 15px; border-radius: 8px;">
+            <strong>What you need for this lesson:</strong> {{ needsList }}
+          </div>
+        </sc-if>
 
         <div style="display: flex; flex-direction: column; gap: 14px;">
           <sc-for list="{{ menuCards }}" as="m" hint-placeholder-count="3">
@@ -286,6 +292,9 @@
                   <span style="font: 600 12px 'IBM Plex Mono', monospace; color: {{ p.dotCol }}; flex: 0 0 auto;">{{ p.num }}</span>
                   <span style="font-size: 17px; line-height: 1.5; font-weight: 500; color: #211F1B;">{{ p.text }}</span>
                 </div>
+                <sc-if value="{{ p.hasNeeds }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin: -4px 0 11px; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.04em; color: #6B4A1E;">YOU NEED: {{ p.needs }}</div>
+                </sc-if>
                 {{ p.control }}
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 9px;">
                   <sc-if value="{{ p.hasJump }}" hint-placeholder-val="{{ true }}">
@@ -317,6 +326,36 @@
                 <span style="flex: 1 1 auto; min-width: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 19px; font-weight: 600; line-height: 1.3; color: #211F1B;">{{ a.label }}</span>
                 <span style="flex: 0 0 auto; font-size: 20px; color: #3E6B8A;">&#9654;</span>
               </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ==================== PRINT-OUTS ====================
+       Opened in a new tab rather than an iframe: printing is the whole point,
+       and a page prints far more reliably when it is the page. -->
+  <sc-if value="{{ showPrints }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height: 100vh; background: #F4F1EA;">
+      <div style="display: flex; align-items: center; gap: 14px; padding: 0 18px; height: 56px; background: #17150F; color: #F4F1EA; position: sticky; top: 0; z-index: 10;">
+        <button onClick="{{ backToMenu }}" style="border: 1px solid rgba(244,241,234,0.25); background: none; cursor: pointer; color: rgba(244,241,234,0.75); border-radius: 6px; padding: 9px 13px; font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.1em; white-space: nowrap; flex: 0 0 auto; min-height: 40px;">&larr; BACK</button>
+        <span style="font: 600 12px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #E4572E; flex: 0 0 auto;">{{ lessonLo }}</span>
+        <span style="font-size: 14px; opacity: 0.6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Print-outs</span>
+      </div>
+      <div style="max-width: 760px; margin: 0 auto; padding: 26px 22px 100px;">
+        <p style="margin: 0 0 6px; font-size: 15px; line-height: 1.6; color: #6B6252;">Staff: print these before the lesson and hand them out. Each one opens in a new tab with a print button.</p>
+        <p style="margin: 0 0 22px; font-size: 14px; line-height: 1.6; color: #8C2F1B;">Print at <strong>100% / actual size</strong>, not &lsquo;fit to page&rsquo;. Each sheet carries a 40&nbsp;mm line to check against a ruler &mdash; at the wrong size the measurements are wrong.</p>
+        <sc-if value="{{ hasPrints }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <sc-for list="{{ printCards }}" as="d" hint-placeholder-count="2">
+              <a href="{{ d.href }}" target="_blank" rel="noreferrer" style="text-decoration: none; width: 100%; background: #FFFDF7; border: 1px solid #E2DACA; border-left: 5px solid #6B5B8A; border-radius: 9px; padding: 20px 22px; display: flex; align-items: center; gap: 18px; min-height: 76px;">
+                <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-family: 'Source Serif 4', Georgia, serif; font-size: 19px; font-weight: 600; line-height: 1.3; color: #211F1B;">{{ d.label }}</span>
+                  <span style="font: 500 12px 'IBM Plex Mono', monospace; color: #9A907C;">{{ d.note }}</span>
+                </span>
+                <span style="flex: 0 0 auto; font-size: 20px; color: #6B5B8A;">&#8599;</span>
+              </a>
             </sc-for>
           </div>
         </sc-if>
@@ -383,6 +422,9 @@
                     <span style="font: 600 11px 'IBM Plex Mono', monospace; color: {{ p.dotCol }}; flex: 0 0 auto;">{{ p.num }}</span>
                     <span style="font-size: 15px; line-height: 1.5; font-weight: 500; color: #211F1B;">{{ p.text }}</span>
                   </div>
+                  <sc-if value="{{ p.hasNeeds }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin: -4px 0 11px; font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: 0.04em; color: #6B4A1E;">YOU NEED: {{ p.needs }}</div>
+                  </sc-if>
                   {{ p.control }}
                   <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 7px;">
                     <sc-if value="{{ p.hasJump }}" hint-placeholder-val="{{ true }}">
@@ -1070,6 +1112,7 @@ class Component extends DCLogic {
     const showHandoutOnly = inLesson && s.lessonMode === 'handout';
     const showAnims = inLesson && s.lessonMode === 'anims' && !s.animOpen;
     const showAnimPlayer = inLesson && s.lessonMode === 'anims' && !!s.animOpen;
+    const showPrints = inLesson && s.lessonMode === 'prints';
     const showAuth = !s.booting && !showSetup && !signedIn;
     const showApp = signedIn && !inLesson && !showSetup && !showPassword;
     const isStaff = signedIn && !!u.is_staff;
@@ -1132,6 +1175,10 @@ class Component extends DCLogic {
           : answered ? 'SAVED' : 'NOT ANSWERED';
         return {
           num: String(i + 1).padStart(2, '0'), text: p.text, answer: val,
+          // What the cadet has to have in front of them. Stated on the question
+          // itself so nobody gets halfway down a handout and finds they cannot
+          // answer it - which is exactly what happened with the map questions.
+          needs: p.needs || '', hasNeeds: !!p.needs,
           control: promptControl(p, val, (v) => this.setAnswer(p.key, v)),
           dotCol: failed ? '#8C2F1B' : answered ? '#4C7A4F' : '#E4572E',
           // Works from either screen: from the handout it switches to the slides
@@ -1147,7 +1194,7 @@ class Component extends DCLogic {
 
     /* -- the chooser that now sits between a lesson card and its content -- */
     let menuTitle = '', menuSub = '', menuCards = [], animCards = [], animTitle = '', animSrc = '';
-    let canReset = false, hasAnswersToClear = false;
+    let canReset = false, hasAnswersToClear = false, printCards = [], needsList = '';
     if (s.lesson) {
       const slides = s.lesson.slides || [];
       const answeredN = prompts.filter(p => (p.answer || '').trim().length > 0).length;
@@ -1168,6 +1215,17 @@ class Component extends DCLogic {
         });
       });
 
+      // Sheets to print before the lesson, and the kit the questions assume.
+      printCards = (s.lesson.printables || []).map(pr => ({
+        file: pr.file, label: pr.label, note: pr.note || '',
+        href: './print/' + encodeURIComponent(pr.file),
+      }));
+      // One line naming everything this lesson expects a cadet to have, each
+      // thing said once however many questions ask for it.
+      const seenNeed = {};
+      (s.lesson.prompts || []).forEach(p => { if (p.needs) seenNeed[p.needs] = true; });
+      needsList = Object.keys(seenNeed).join(' · ');
+
       menuTitle = TITLES[s.lessonLo] || '';
       menuSub = slides.length + ' slides · ' + prompts.length + ' handout questions · ' + animCards.length + ' animations';
       menuCards = [
@@ -1184,6 +1242,11 @@ class Component extends DCLogic {
           meta: animCards.length ? (animCards.length + ' to watch') : 'None in this lesson',
           accent: '#3E6B8A', onGo: () => this.setLessonMode('anims') },
       ];
+      if (printCards.length) menuCards.push(
+        { key: 'prints', title: 'Print-outs',
+          desc: 'Sheets to print and hand out before the lesson. Some handout questions need them.',
+          meta: printCards.length + (printCards.length === 1 ? ' sheet' : ' sheets'),
+          accent: '#6B5B8A', onGo: () => this.setLessonMode('prints') });
 
       if (s.animOpen) {
         animSrc = './anim/' + encodeURIComponent(s.animOpen);
@@ -1300,7 +1363,7 @@ class Component extends DCLogic {
 
     return {
       booting: s.booting, showAuth, showApp, showSetup, showLesson,
-      showLessonMenu, showHandoutOnly, showAnims, showAnimPlayer, showPassword,
+      showLessonMenu, showHandoutOnly, showAnims, showAnimPlayer, showPrints, showPassword,
 
       /* change your own password */
       openPw: () => this.setState({ pwOpen: true, pwErr: '', pwOk: '', pwCurrent: '', pwNew: '', pwConfirm: '' }),
@@ -1420,6 +1483,8 @@ class Component extends DCLogic {
 
       /* chooser, handout-on-its-own, animations */
       menuTitle, menuSub, menuCards, animCards, animTitle, animSrc,
+      printCards, hasPrints: printCards.length > 0,
+      needsList, hasNeedsList: !!needsList,
 
       /* start this lesson again */
       canReset, showResetLink: canReset && !s.resetOpen, resetOpen: s.resetOpen,

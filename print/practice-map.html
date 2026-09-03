@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Practice map sheet — 2434 Squadron</title>
+<!--
+  2434 (Church Fenton) Squadron — practice map sheet.
+
+  A drawn training map, NOT a reproduction of an Ordnance Survey sheet. Nothing
+  here is Crown copyright, so it can be printed and handed out freely.
+
+  Drawn at 1:25 000, so one grid square is 1 km and 4 cm on the paper. That only
+  holds if it is printed at 100% on A4 — "fit to page" will shrink it and the
+  roamer will lie. There is a check line in the margin to confirm it.
+
+  One self-contained file, like the animations, so it works from a USB stick
+  with no connection.
+-->
+<style>
+  html, body { margin: 0; padding: 0; background: #F4F1EA; }
+  body { font-family: 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, sans-serif; color: #211F1B; }
+  .bar {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 14px 18px; background: #211F1B; color: #F4F1EA;
+  }
+  .bar h1 { margin: 0; font-size: 16px; font-weight: 600; flex: 1 1 auto; }
+  .bar button {
+    border: 0; cursor: pointer; background: #E4572E; color: #fff;
+    padding: 11px 18px; border-radius: 7px; font: 500 14px inherit; min-height: 44px;
+  }
+  .bar span { font-size: 13px; opacity: 0.75; flex: 1 1 100%; line-height: 1.5; }
+  .sheet {
+    width: 210mm; height: 297mm; margin: 16px auto; background: #fff;
+    box-shadow: 0 6px 26px rgba(0,0,0,0.18);
+  }
+  svg { display: block; width: 100%; height: 100%; }
+
+  @page { size: A4 portrait; margin: 0; }
+  @media print {
+    html, body { background: #fff; }
+    .bar { display: none; }
+    .sheet { width: 210mm; height: 297mm; margin: 0; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <h1>Practice map sheet</h1>
+  <button onclick="window.print()">Print this sheet</button>
+  <span>Print at <strong>100% / actual size</strong>, not “fit to page” — otherwise the scale is wrong and the roamer will not measure correctly. Check the 40&nbsp;mm line in the bottom margin with a ruler.</span>
+</div>
+
+<div class="sheet">
+<svg viewBox="0 0 210 297" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- open moorland / rough grass stipple -->
+    <pattern id="rough" width="4" height="4" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.22" fill="#B9A66B"/>
+      <circle cx="3" cy="3" r="0.22" fill="#B9A66B"/>
+    </pattern>
+    <!-- woodland -->
+    <pattern id="wood" width="5" height="5" patternUnits="userSpaceOnUse">
+      <rect width="5" height="5" fill="#D6E6C8"/>
+      <circle cx="1.6" cy="1.6" r="0.85" fill="#7BA05B"/>
+      <circle cx="3.9" cy="3.6" r="0.85" fill="#7BA05B"/>
+    </pattern>
+    <clipPath id="mapclip"><rect x="5" y="30" width="200" height="200"/></clipPath>
+  </defs>
+
+  <rect x="0" y="0" width="210" height="297" fill="#ffffff"/>
+
+  <!-- ============================ TITLE ============================ -->
+  <text x="5" y="11" font-size="5.2" font-weight="600" fill="#211F1B">2434 (Church Fenton) Squadron — Practice Map</text>
+  <text x="5" y="17.5" font-size="3.1" fill="#6B6252">Basic Navigation · a drawn training sheet, not a real place. Scale 1:25 000 — one grid square is 1 km.</text>
+  <text x="5" y="23" font-size="3.1" font-weight="600" fill="#8C2F1B">Not for real navigation. The figures on this sheet are for practice only.</text>
+  <line x1="5" y1="26.5" x2="205" y2="26.5" stroke="#211F1B" stroke-width="0.4"/>
+
+  <!-- ============================ MAP ============================ -->
+  <rect x="5" y="30" width="200" height="200" fill="#FFFDF5"/>
+
+  <g clip-path="url(#mapclip)">
+    <!-- rough ground in the north-east -->
+    <path d="M125,30 L205,30 L205,110 L160,120 L130,80 Z" fill="url(#rough)"/>
+
+    <!-- woodland blocks -->
+    <path d="M22,58 q18,-10 34,2 q10,16 -6,26 q-24,8 -32,-8 Z" fill="url(#wood)" stroke="#5E7F45" stroke-width="0.3"/>
+    <path d="M140,150 q26,-8 36,10 q-4,20 -26,20 q-20,-4 -14,-24 Z" fill="url(#wood)" stroke="#5E7F45" stroke-width="0.3"/>
+    <path d="M60,190 q20,-6 26,8 q-6,16 -22,14 q-14,-6 -8,-20 Z" fill="url(#wood)" stroke="#5E7F45" stroke-width="0.3"/>
+
+    <!-- contours: a hill in the north-east, ring contours, 10 m interval -->
+    <g fill="none" stroke="#B07B4F" stroke-width="0.32">
+      <path d="M150,52 q26,-14 40,6 q10,24 -14,34 q-32,8 -38,-16 q-4,-16 12,-24 Z"/>
+      <path d="M156,58 q20,-11 31,5 q8,19 -11,27 q-25,6 -30,-13 q-3,-12 10,-19 Z"/>
+      <path d="M162,64 q14,-8 22,4 q6,13 -8,19 q-18,4 -21,-9 q-2,-9 7,-14 Z"/>
+      <path d="M168,70 q9,-5 14,3 q4,8 -5,12 q-11,2 -13,-6 q-1,-5 4,-9 Z"/>
+    </g>
+    <text x="172" y="79" font-size="2.6" fill="#B07B4F" font-style="italic">180</text>
+    <!-- spot height -->
+    <circle cx="176" cy="76" r="0.55" fill="#211F1B"/>
+    <text x="178" y="75" font-size="2.6" fill="#211F1B">193</text>
+
+    <!-- a second, gentler rise in the south-west: contours further apart -->
+    <g fill="none" stroke="#B07B4F" stroke-width="0.32">
+      <path d="M20,150 q26,-10 44,6 q6,18 -18,24 q-30,4 -32,-14 Z"/>
+      <path d="M32,158 q18,-7 30,4 q4,12 -12,16 q-20,3 -22,-9 Z"/>
+    </g>
+    <text x="40" y="170" font-size="2.6" fill="#B07B4F" font-style="italic">70</text>
+
+    <!-- stream, flowing south-west into a lake -->
+    <path d="M168,92 q-16,20 -34,26 q-20,8 -30,26 q-10,18 -30,26" fill="none" stroke="#5B9BD5" stroke-width="0.55"/>
+    <path d="M104,144 q-18,-6 -30,2" fill="none" stroke="#5B9BD5" stroke-width="0.45"/>
+    <ellipse cx="66" cy="204" rx="13" ry="7.5" fill="#BBDCF2" stroke="#5B9BD5" stroke-width="0.4"/>
+    <text x="56" y="215" font-size="2.7" fill="#3F7CA8" font-style="italic">Barrow Water</text>
+
+    <!-- B road running north-south, then east -->
+    <path d="M40,30 L44,86 q2,16 18,22 L120,128 q14,6 18,20 L146,230"
+          fill="none" stroke="#E8A33D" stroke-width="1.9"/>
+    <path d="M40,30 L44,86 q2,16 18,22 L120,128 q14,6 18,20 L146,230"
+          fill="none" stroke="#B87A1E" stroke-width="0.25"/>
+    <text x="47" y="45" font-size="2.7" fill="#8A5A12" font-weight="600">B1223</text>
+
+    <!-- minor road -->
+    <path d="M5,120 q40,-8 62,10 q22,16 56,10 L205,132"
+          fill="none" stroke="#8A8375" stroke-width="1.35"/>
+    <path d="M5,120 q40,-8 62,10 q22,16 56,10 L205,132"
+          fill="none" stroke="#FFFFFF" stroke-width="0.8"/>
+
+    <!-- track (dashed) -->
+    <path d="M96,124 q10,26 -6,44 q-16,20 -8,42" fill="none" stroke="#8A6A3A"
+          stroke-width="0.5" stroke-dasharray="2.2 1.4"/>
+
+    <!-- field boundaries -->
+    <g stroke="#C9C0AC" stroke-width="0.22" fill="none">
+      <path d="M46,140 L92,152 M46,140 L38,180 M92,152 L84,192"/>
+      <path d="M150,180 L182,192 M150,180 L142,206"/>
+    </g>
+
+    <!-- church with a tower -->
+    <g transform="translate(70,104)">
+      <rect x="-1.1" y="-1.1" width="2.2" height="2.2" fill="#211F1B"/>
+      <line x1="0" y1="-1.1" x2="0" y2="-4.2" stroke="#211F1B" stroke-width="0.42"/>
+      <line x1="-1.1" y1="-3.1" x2="1.1" y2="-3.1" stroke="#211F1B" stroke-width="0.42"/>
+    </g>
+    <text x="74" y="105" font-size="2.7" fill="#211F1B">Ch</text>
+
+    <!-- farm buildings -->
+    <g fill="#8A8375">
+      <rect x="126" y="152" width="3.4" height="2.4"/>
+      <rect x="130.4" y="153.4" width="2.4" height="2"/>
+      <rect x="126.6" y="155.6" width="4.6" height="1.8"/>
+    </g>
+    <text x="134" y="156" font-size="2.7" fill="#211F1B">Cobb’s Farm</text>
+
+    <!-- a second settlement -->
+    <g fill="#8A8375">
+      <rect x="41" y="88" width="3" height="2.2"/>
+      <rect x="45" y="89" width="2.6" height="2.2"/>
+      <rect x="42" y="92" width="4" height="1.8"/>
+    </g>
+    <text x="49" y="92" font-size="2.7" fill="#211F1B">Netherby</text>
+
+    <!-- mast -->
+    <g transform="translate(186,150)">
+      <line x1="0" y1="0" x2="0" y2="-5" stroke="#211F1B" stroke-width="0.4"/>
+      <path d="M-1.6,0 L0,-5 L1.6,0" fill="none" stroke="#211F1B" stroke-width="0.35"/>
+    </g>
+    <text x="176" y="156" font-size="2.6" fill="#211F1B">Mast</text>
+
+    <!-- triangulation pillar -->
+    <g transform="translate(176,76)"></g>
+
+    <!-- bridge where the B road crosses the stream -->
+    <g transform="translate(120,128)" stroke="#211F1B" stroke-width="0.35">
+      <line x1="-2" y1="-1.6" x2="-2" y2="1.6"/>
+      <line x1="2" y1="-1.6" x2="2" y2="1.6"/>
+    </g>
+  </g>
+
+  <!-- ---- grid lines every 40 mm = 1 km ---- -->
+  <g stroke="#7FA8C9" stroke-width="0.25" opacity="0.85">
+    <line x1="45"  y1="30" x2="45"  y2="230"/>
+    <line x1="85"  y1="30" x2="85"  y2="230"/>
+    <line x1="125" y1="30" x2="125" y2="230"/>
+    <line x1="165" y1="30" x2="165" y2="230"/>
+    <line x1="5"  y1="70"  x2="205" y2="70"/>
+    <line x1="5"  y1="110" x2="205" y2="110"/>
+    <line x1="5"  y1="150" x2="205" y2="150"/>
+    <line x1="5"  y1="190" x2="205" y2="190"/>
+  </g>
+  <rect x="5" y="30" width="200" height="200" fill="none" stroke="#211F1B" stroke-width="0.6"/>
+
+  <!-- eastings, along the top and bottom -->
+  <g font-size="2.9" fill="#3F7CA8" font-weight="600" text-anchor="middle">
+    <text x="5"   y="28.2">40</text><text x="45"  y="28.2">41</text><text x="85"  y="28.2">42</text>
+    <text x="125" y="28.2">43</text><text x="165" y="28.2">44</text><text x="205" y="28.2">45</text>
+    <text x="5"   y="234">40</text><text x="45"  y="234">41</text><text x="85"  y="234">42</text>
+    <text x="125" y="234">43</text><text x="165" y="234">44</text><text x="205" y="234">45</text>
+  </g>
+  <!-- northings, up the sides (numbers increase northwards = upwards) -->
+  <g font-size="2.9" fill="#3F7CA8" font-weight="600" text-anchor="middle">
+    <text x="2.6" y="231">20</text><text x="2.6" y="191">21</text><text x="2.6" y="151">22</text>
+    <text x="2.6" y="111">23</text><text x="2.6" y="71">24</text><text x="2.6" y="31">25</text>
+    <text x="207.6" y="231">20</text><text x="207.6" y="191">21</text><text x="207.6" y="151">22</text>
+    <text x="207.6" y="111">23</text><text x="207.6" y="71">24</text><text x="207.6" y="31">25</text>
+  </g>
+
+  <!-- ============================ MARGIN ============================ -->
+  <line x1="5" y1="238" x2="205" y2="238" stroke="#211F1B" stroke-width="0.4"/>
+
+  <!-- ---- the three norths: what LO2 asks you to find ---- -->
+  <g transform="translate(14,244)">
+    <text x="-9" y="0" font-size="3.2" font-weight="600" fill="#211F1B">Magnetic variation</text>
+    <g transform="translate(12,30)">
+      <!-- true north: star -->
+      <line x1="0" y1="0" x2="0" y2="-24" stroke="#211F1B" stroke-width="0.5"/>
+      <path d="M0,-27.5 l0.9,2.2 2.4,0.2 -1.8,1.6 0.6,2.3 -2.1,-1.3 -2.1,1.3 0.6,-2.3 -1.8,-1.6 2.4,-0.2 Z" fill="#211F1B"/>
+      <!-- grid north -->
+      <line x1="0" y1="0" x2="-3.6" y2="-23.7" stroke="#3F7CA8" stroke-width="0.5"/>
+      <!-- magnetic north, 2 degrees west of grid -->
+      <line x1="0" y1="0" x2="-7.4" y2="-22.8" stroke="#8C2F1B" stroke-width="0.6"/>
+      <path d="M-7.4,-22.8 l-1.6,3.3 3.4,-0.6 Z" fill="#8C2F1B"/>
+    </g>
+    <text x="20" y="16" font-size="2.7" fill="#211F1B">True North</text>
+    <text x="20" y="20.5" font-size="2.7" fill="#3F7CA8">Grid North</text>
+    <text x="20" y="25" font-size="2.7" fill="#8C2F1B" font-weight="600">Magnetic North</text>
+    <text x="-9" y="38" font-size="2.9" fill="#211F1B">Magnetic North is <tspan font-weight="600">2°</tspan> west of Grid North.</text>
+    <text x="-9" y="42.5" font-size="2.7" fill="#6B6252">Grid North is 1° west of True North.</text>
+  </g>
+
+  <!-- ---- scale bar ---- -->
+  <!-- The scale bar is drawn true to scale, so it doubles as the check that the
+       sheet printed at the right size: 1 km of bar must measure 40 mm of paper. -->
+  <g transform="translate(84,244)">
+    <text x="0" y="0" font-size="3.2" font-weight="600" fill="#211F1B">Scale 1:25 000</text>
+    <g transform="translate(0,6)">
+      <rect x="0"  y="0" width="10" height="2.4" fill="#211F1B"/>
+      <rect x="10" y="0" width="10" height="2.4" fill="#ffffff" stroke="#211F1B" stroke-width="0.3"/>
+      <rect x="20" y="0" width="10" height="2.4" fill="#211F1B"/>
+      <rect x="30" y="0" width="10" height="2.4" fill="#ffffff" stroke="#211F1B" stroke-width="0.3"/>
+      <line x1="0" y1="-1.8" x2="0" y2="4.2" stroke="#8C2F1B" stroke-width="0.5"/>
+      <line x1="40" y1="-1.8" x2="40" y2="4.2" stroke="#8C2F1B" stroke-width="0.5"/>
+      <g font-size="2.5" fill="#211F1B" text-anchor="middle">
+        <text x="0" y="8">0</text><text x="20" y="8">500 m</text><text x="40" y="8">1 km</text>
+      </g>
+    </g>
+    <text x="0" y="21" font-size="2.7" fill="#211F1B">1 grid square = 1 km = 40 mm.</text>
+    <text x="0" y="26" font-size="2.7" font-weight="600" fill="#8C2F1B">Measure the bar between the red marks.</text>
+    <text x="0" y="30.4" font-size="2.5" fill="#6B6252">It must be 40 mm. If it is not, this sheet</text>
+    <text x="0" y="34" font-size="2.5" fill="#6B6252">printed at the wrong size — print it again</text>
+    <text x="0" y="37.6" font-size="2.5" fill="#6B6252">at 100%, not “fit to page”.</text>
+  </g>
+
+  <!-- ---- legend ---- -->
+  <g transform="translate(155,244)">
+    <text x="0" y="0" font-size="3.2" font-weight="600" fill="#211F1B">Symbols</text>
+    <g font-size="2.6" fill="#211F1B">
+      <g transform="translate(2,6)">
+        <rect x="-1" y="-1" width="2" height="2" fill="#211F1B"/>
+        <line x1="0" y1="-1" x2="0" y2="-3.4" stroke="#211F1B" stroke-width="0.4"/>
+        <line x1="-1" y1="-2.6" x2="1" y2="-2.6" stroke="#211F1B" stroke-width="0.4"/>
+      </g>
+      <text x="8" y="7">Church with tower</text>
+
+      <rect x="0" y="11" width="5" height="1.6" fill="#E8A33D"/>
+      <text x="8" y="12.6">B road</text>
+
+      <line x1="0" y1="17" x2="5" y2="17" stroke="#8A8375" stroke-width="1.1"/>
+      <text x="8" y="18">Minor road</text>
+
+      <line x1="0" y1="22" x2="5" y2="22" stroke="#8A6A3A" stroke-width="0.5" stroke-dasharray="1.6 1.1"/>
+      <text x="8" y="23">Track</text>
+
+      <line x1="0" y1="27" x2="5" y2="27" stroke="#5B9BD5" stroke-width="0.55"/>
+      <text x="8" y="28">Stream</text>
+
+      <path d="M0,30 h5 v3 h-5 Z" fill="url(#wood)" stroke="#5E7F45" stroke-width="0.25"/>
+      <text x="8" y="33">Woodland</text>
+
+      <path d="M0,36 q2.5,-1.6 5,0" fill="none" stroke="#B07B4F" stroke-width="0.32"/>
+      <text x="8" y="38">Contour (10 m)</text>
+
+      <circle cx="1" cy="42" r="0.5" fill="#211F1B"/>
+      <text x="8" y="43">Spot height</text>
+    </g>
+  </g>
+
+  <text x="5" y="293" font-size="2.5" fill="#9A907C">2434 Squadron Training Hub · practice sheet · invented ground, invented figures · print at 100% on A4</text>
+</svg>
+</div>
+
+</body>
+</html>
