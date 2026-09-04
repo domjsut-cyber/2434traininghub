@@ -813,6 +813,7 @@
                     <span style="flex: 0 0 128px;">SERVICE NO</span>
                     <span style="flex: 0 0 106px;">LESSONS</span>
                     <span style="flex: 0 0 74px; text-align: center;">STAFF</span>
+                    <span style="flex: 0 0 96px;"></span>
                   </div>
                   <sc-for list="{{ people }}" as="p" hint-placeholder-count="8">
                     <div style="display: flex; align-items: center; gap: 16px; padding: 14px 22px; border-bottom: 1px solid #EFE9DA;">
@@ -822,7 +823,27 @@
                       <span style="flex: 0 0 74px; display: flex; justify-content: center;">
                         <input type="checkbox" checked="{{ p.is_staff }}" onChange="{{ p.onToggle }}" disabled="{{ p.isSelf }}" title="{{ p.toggleTitle }}" style="width: 22px; height: 22px; accent-color: #E4572E; cursor: {{ p.toggleCursor }};" />
                       </span>
+                      <span style="flex: 0 0 96px; display: flex; justify-content: flex-end;">
+                        <sc-if value="{{ p.canRemove }}" hint-placeholder-val="{{ true }}">
+                          <button onClick="{{ p.onRemove }}" style="border: 1px solid #E2DACA; background: #FFFFFF; cursor: pointer; color: #8C2F1B; border-radius: 6px; padding: 9px 13px; font: 500 13px 'IBM Plex Sans', sans-serif; min-height: 42px;">Remove</button>
+                        </sc-if>
+                        <sc-if value="{{ p.isSelf }}" hint-placeholder-val="{{ false }}">
+                          <span style="font: 500 11px 'IBM Plex Mono', monospace; color: #C9C0AC;">YOU</span>
+                        </sc-if>
+                      </span>
                     </div>
+
+                    <sc-if value="{{ p.confirming }}" hint-placeholder-val="{{ false }}">
+                      <div style="padding: 18px 22px; background: #FBEDE9; border-bottom: 1px solid #F0CFC6;">
+                        <div style="font-size: 15px; line-height: 1.6; color: #8C2F1B;"><strong>Remove {{ p.display_name }} for good?</strong></div>
+                        <div style="font-size: 14px; line-height: 1.6; color: #6B4A1E; margin-top: 7px;">This deletes everything they have written &mdash; every handout answer, how far they got in each lesson, and their attendance. It cannot be undone. Their roster entry goes too, so to bring them back you would add them again with their email.</div>
+                        <div style="font-size: 13px; line-height: 1.6; color: #9A907C; margin-top: 7px;">Their sign-in itself stays in Supabase until you delete it there, but with nothing attached to it there is nothing it can reach.</div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                          <button onClick="{{ p.onConfirmRemove }}" style="border: 0; cursor: pointer; background: #8C2F1B; color: #FFFFFF; padding: 12px 18px; border-radius: 8px; font: 500 14px 'IBM Plex Sans', sans-serif; min-height: 46px;">{{ p.removeLabel }}</button>
+                          <button onClick="{{ p.onCancelRemove }}" style="border: 0; background: none; cursor: pointer; color: #6B6252; padding: 12px 14px; border-radius: 8px; font: 500 14px 'IBM Plex Sans', sans-serif; min-height: 46px;">Keep them</button>
+                        </div>
+                      </div>
+                    </sc-if>
                   </sc-for>
                 </div>
                 <div style="font-size: 13px; line-height: 1.6; color: #9A907C;">You cannot change your own staff status &mdash; that rule is enforced by the database, not just hidden here.</div>
@@ -917,6 +938,7 @@ class Component extends DCLogic {
     qOpen: false, qLo: 'LO1', qMode: 'view', qRows: [], qSource: 'file',
     qBusy: false, qErr: '', qOk: '',
     attOpen: false, attLo: 'LO1', attRows: [], attBusy: false, attErr: '',
+    removeId: null, removeBusy: false,
     rService: '', rSurname: '', rEmail: '', rFlight: '', rStaff: false,
     rosterMsg: '', rosterOk: false, loadErr: '',
     liveCadet: null,
@@ -1119,6 +1141,22 @@ class Component extends DCLogic {
   openCadet(cadet) { this.setState({ liveCadet: cadet, staffResetMsg: '' }); this.loadLoPrompts(this.state.liveLo); }
 
   closeCadet() { this.setState({ liveCadet: null }); }
+
+  /* Remove someone for good. Irreversible: the cascades take their handouts,
+     progress and attendance with the profile, which is what removing a test
+     account has to mean. */
+  async removePerson(p) {
+    if (this.state.removeBusy) return;
+    this.setState({ removeBusy: true, loadErr: '' });
+    try {
+      await window.HubData.removePerson(p.id, p.service_number);
+      this.setState({ removeBusy: false, removeId: null });
+      await this.loadAll();
+    } catch (e) {
+      this.setState({ removeBusy: false, removeId: null,
+        loadErr: (e && e.message) || String(e) });
+    }
+  }
 
   async toggleStaff(id, next) {
     try {
@@ -1638,6 +1676,14 @@ class Component extends DCLogic {
       toggleCursor: p.id === (u||{}).id ? 'not-allowed' : 'pointer',
       toggleTitle: p.id === (u||{}).id ? 'You cannot change your own staff status' : 'Staff access',
       onToggle: (e) => this.toggleStaff(p.id, e.target.checked),
+      // Removal is offered for anyone but yourself. The database refuses
+      // self-removal too, so hiding it here is a courtesy, not the rule.
+      canRemove: p.id !== (u||{}).id,
+      confirming: s.removeId === p.id,
+      removeLabel: s.removeBusy ? 'Removing…' : 'Yes, remove them',
+      onRemove: () => this.setState({ removeId: p.id, loadErr: '' }),
+      onCancelRemove: () => this.setState({ removeId: null }),
+      onConfirmRemove: () => this.removePerson(p),
     }));
 
     /* Everyone on the roster, claimed or not. Showing only the unclaimed made

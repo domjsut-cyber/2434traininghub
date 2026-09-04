@@ -217,6 +217,40 @@ create trigger trg_guard_is_staff
   before update on public.profiles
   for each row execute function public.guard_is_staff();
 
+-- ---------------------------------------------------------------------------
+--  GUARD: nobody removes themselves
+--
+--  Removing a profile takes the cadet's handouts, progress and attendance with
+--  it, through the cascades above. That is what "remove" should mean - but a
+--  staff member who removed their own account would lock themselves out and
+--  take their own record with them, so that one case is refused outright.
+--
+--  Like trg_guard_is_staff, this fires for the SQL editor too, where auth.uid()
+--  is null and is_staff() is therefore false. To delete by hand, switch it off
+--  for the one statement - see the note at the foot of this file.
+-- ---------------------------------------------------------------------------
+create or replace function public.guard_profile_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_staff() then
+    raise exception 'Only staff can remove someone.';
+  end if;
+  if old.id = auth.uid() then
+    raise exception 'You cannot remove your own account.';
+  end if;
+  return old;
+end;
+$$;
+
+drop trigger if exists trg_guard_profile_delete on public.profiles;
+create trigger trg_guard_profile_delete
+  before delete on public.profiles
+  for each row execute function public.guard_profile_delete();
+
 -- Keep updated_at honest
 create or replace function public.touch_updated_at()
 returns trigger language plpgsql as $$
@@ -442,4 +476,20 @@ create policy attendance_staff_all on public.attendance
 --       commit;
 --
 --    Then sign out and back in - the hub reads your profile at sign-in.
+--
+--  DELETING SOMEONE BY HAND
+--    trg_guard_profile_delete refuses deletes from the SQL editor for the same
+--    reason: auth.uid() is null there, so is_staff() is false. Staff can remove
+--    people from the People screen in the hub, which is the intended route. If
+--    you must do it here:
+--
+--       begin;
+--       alter table public.profiles disable trigger trg_guard_profile_delete;
+--       delete from public.profiles where service_number = 'THEIR_SERVICE_NO';
+--       alter table public.profiles enable trigger trg_guard_profile_delete;
+--       commit;
+--
+--    That takes their handouts, progress, attendance and check results with it.
+--    Their Supabase sign-in survives either way - remove that under
+--    Authentication > Users if you want it gone.
 -- ============================================================================

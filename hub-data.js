@@ -354,6 +354,42 @@
       return data;
     },
 
+    /* Remove someone completely: their roster entry AND their profile, which
+       takes their handouts, progress, attendance and check results with it
+       through the cascades in the schema.
+
+       Roster row first, deliberately. If the profile delete then failed we
+       would have removed a roster entry from someone who still works, which is
+       harmless - the roster only governs signing up. The other order would
+       leave a profile-less account against a claimed roster row, which is the
+       exact dead end that locked cadets out before.
+
+       What this CANNOT remove is the Supabase sign-in itself, which needs an
+       admin key that must never be in a browser. That leftover is inert: with
+       no profile, is_staff() is false and every policy gives them nothing.
+       Delete it in Supabase > Authentication > Users if you want it gone. */
+    async removePerson(cadetId, serviceNumber) {
+      if (!this.isLive()) {
+        const d = loadDemo();
+        d.profiles = d.profiles.filter(p => p.id !== cadetId);
+        d.progress = (d.progress || []).filter(p => p.cadet_id !== cadetId);
+        d.handouts = (d.handouts || []).filter(h => h.cadet_id !== cadetId);
+        d.attendance = (d.attendance || []).filter(a => a.cadet_id !== cadetId);
+        if (d.session === cadetId) d.session = null;
+        saveDemo(d); return;
+      }
+      const c = await requireSession();
+      if (serviceNumber) {
+        const { error: rErr } = await c.from('roster').delete().eq('service_number', serviceNumber);
+        if (rErr) throw new Error(refused(rErr.message));
+      }
+      const { error } = await c.from('profiles').delete().eq('id', cadetId);
+      if (error) throw new Error(
+        /own account/i.test(error.message)
+          ? 'You cannot remove your own account. Ask another staff member to do it.'
+          : refused(error.message));
+    },
+
     async listRoster() {
       if (!this.isLive()) return [];
       const c = await client();
