@@ -77,3 +77,33 @@ A NOTE ON CADET DATA
   to check a cadet is who they say they are when they sign up, and is erased
   automatically the moment they claim their account. Passwords are handled by
   Supabase and never touch these files.
+
+
+PUBLISHING ON GITHUB PAGES INSTEAD
+  The squadron hub is also served from GitHub Pages, straight out of the repo:
+
+        https://domjsut-cyber.github.io/2434traininghub/
+
+  Nothing needs building. Pages serves the files in the repo exactly as they
+  are, so a push to main is the whole deploy - no drag-and-drop, no build
+  minutes, no credit allowance to run out.
+
+  IF YOU EVER NEED TO SET IT UP AGAIN
+    Repo > Settings > Pages > Build and deployment
+      Source: Deploy from a branch
+      Branch: main    Folder: / (root)
+    Save, wait a minute, and the address above starts working.
+
+  THE .nojekyll FILE
+    The empty .nojekyll file in this folder matters. Without it GitHub tries to
+    run the files through Jekyll, a blog builder, which quietly skips anything
+    it does not recognise. Do not delete it.
+
+  A NOTE ON THE TWO ADDRESSES
+    Netlify and GitHub Pages can both serve the hub at the same time, from the
+    same repo. They are the same files, talking to the same Supabase database,
+    so a cadet gets the same account and the same work either way. Nothing in
+    the hub depends on which address it is opened from.
+
+    Pick one to give the cadets, so nobody is confused about which is "the"
+    address. Whichever you pick, test it in a private window first.
