@@ -743,6 +743,30 @@
             <!-- People -->
             <sc-if value="{{ vCadets }}" hint-placeholder-val="{{ false }}">
               <div style="display: flex; flex-direction: column; gap: 24px;">
+
+                <sc-if value="{{ pwAsking }}" hint-placeholder-val="{{ false }}">
+                  <div style="background: #FBF3E4; border: 1px solid #EBDCBE; border-radius: 9px; padding: 20px 22px;">
+                    <div style="font-size: 16px; line-height: 1.6; color: #6B4A1E;"><strong>Give {{ pwResetName }} a new password?</strong></div>
+                    <div style="font-size: 14px; line-height: 1.6; color: #6B4A1E; margin-top: 7px;">The hub will pick one and show it to you once, for you to tell them. Whatever password they had stops working straight away. They can change it themselves afterwards under Password.</div>
+                    <sc-if value="{{ hasPwResetErr }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top: 12px; font-size: 14px; line-height: 1.55; color: #8C2F1B; background: #FBEDE9; border: 1px solid #F0CFC6; padding: 12px 14px; border-radius: 7px;">{{ pwResetErr }}</div>
+                    </sc-if>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                      <button onClick="{{ confirmPassword }}" style="border: 0; cursor: pointer; background: #211F1B; color: #F4F1EA; padding: 12px 18px; border-radius: 8px; font: 500 14px 'IBM Plex Sans', sans-serif; min-height: 46px;">{{ pwResetLabel }}</button>
+                      <button onClick="{{ cancelPassword }}" style="border: 0; background: none; cursor: pointer; color: #6B6252; padding: 12px 14px; border-radius: 8px; font: 500 14px 'IBM Plex Sans', sans-serif; min-height: 46px;">Cancel</button>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ pwShowing }}" hint-placeholder-val="{{ false }}">
+                  <div style="background: #ECF3EC; border: 1px solid #CFE0D0; border-radius: 9px; padding: 22px;">
+                    <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.14em; color: #2F5A33;">NEW PASSWORD FOR {{ pwResetName }}</div>
+                    <div style="font: 600 32px 'IBM Plex Mono', monospace; color: #211F1B; margin: 12px 0; user-select: all; word-break: break-all;">{{ pwResetShown }}</div>
+                    <div style="font-size: 14px; line-height: 1.6; color: #2F5A33;">Tell them now or write it down &mdash; this is the only time it is shown, and nobody can look it up afterwards. Ask them to change it under Password once they are in.</div>
+                    <button onClick="{{ cancelPassword }}" style="margin-top: 15px; border: 0; cursor: pointer; background: #211F1B; color: #F4F1EA; padding: 12px 18px; border-radius: 8px; font: 500 14px 'IBM Plex Sans', sans-serif; min-height: 46px;">Done</button>
+                  </div>
+                </sc-if>
+
                 <div>
                   <div style="font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: 0.16em; color: #9A907C; margin-bottom: 8px;">ACCOUNTS</div>
                   <h1 style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 36px; font-weight: 600;">People</h1>
@@ -813,9 +837,10 @@
                     <span style="flex: 0 0 128px;">SERVICE NO</span>
                     <span style="flex: 0 0 106px;">LESSONS</span>
                     <span style="flex: 0 0 74px; text-align: center;">STAFF</span>
-                    <span style="flex: 0 0 96px;"></span>
+                    <span style="flex: 0 0 210px;"></span>
                   </div>
                   <sc-for list="{{ people }}" as="p" hint-placeholder-count="8">
+                    <div>
                     <div style="display: flex; align-items: center; gap: 16px; padding: 14px 22px; border-bottom: 1px solid #EFE9DA;">
                       <span style="flex: 1 1 auto; min-width: 150px; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ p.display_name }}</span>
                       <span style="flex: 0 0 128px; font: 500 13px 'IBM Plex Mono', monospace; color: #6B6252; overflow: hidden; text-overflow: ellipsis;">{{ p.service_number }}</span>
@@ -823,12 +848,13 @@
                       <span style="flex: 0 0 74px; display: flex; justify-content: center;">
                         <input type="checkbox" checked="{{ p.is_staff }}" onChange="{{ p.onToggle }}" disabled="{{ p.isSelf }}" title="{{ p.toggleTitle }}" style="width: 22px; height: 22px; accent-color: #E4572E; cursor: {{ p.toggleCursor }};" />
                       </span>
-                      <span style="flex: 0 0 96px; display: flex; justify-content: flex-end;">
+                      <span style="flex: 0 0 210px; display: flex; justify-content: flex-end; gap: 7px;">
                         <sc-if value="{{ p.canRemove }}" hint-placeholder-val="{{ true }}">
+                          <button onClick="{{ p.onNewPassword }}" style="border: 1px solid #E2DACA; background: #FFFFFF; cursor: pointer; color: #6B6252; border-radius: 6px; padding: 9px 13px; font: 500 13px 'IBM Plex Sans', sans-serif; min-height: 42px; white-space: nowrap;">New password</button>
                           <button onClick="{{ p.onRemove }}" style="border: 1px solid #E2DACA; background: #FFFFFF; cursor: pointer; color: #8C2F1B; border-radius: 6px; padding: 9px 13px; font: 500 13px 'IBM Plex Sans', sans-serif; min-height: 42px;">Remove</button>
                         </sc-if>
                         <sc-if value="{{ p.isSelf }}" hint-placeholder-val="{{ false }}">
-                          <span style="font: 500 11px 'IBM Plex Mono', monospace; color: #C9C0AC;">YOU</span>
+                          <span style="align-self: center; font: 500 11px 'IBM Plex Mono', monospace; color: #C9C0AC;">YOU</span>
                         </sc-if>
                       </span>
                     </div>
@@ -844,6 +870,7 @@
                         </div>
                       </div>
                     </sc-if>
+                    </div>
                   </sc-for>
                 </div>
                 <div style="font-size: 13px; line-height: 1.6; color: #9A907C;">You cannot change your own staff status &mdash; that rule is enforced by the database, not just hidden here.</div>
@@ -939,6 +966,7 @@ class Component extends DCLogic {
     qBusy: false, qErr: '', qOk: '',
     attOpen: false, attLo: 'LO1', attRows: [], attBusy: false, attErr: '',
     removeId: null, removeBusy: false,
+    pwResetId: null, pwResetBusy: false, pwResetShown: '', pwResetName: '', pwResetErr: '',
     rService: '', rSurname: '', rEmail: '', rFlight: '', rStaff: false,
     rosterMsg: '', rosterOk: false, loadErr: '',
     liveCadet: null,
@@ -1141,6 +1169,23 @@ class Component extends DCLogic {
   openCadet(cadet) { this.setState({ liveCadet: cadet, staffResetMsg: '' }); this.loadLoPrompts(this.state.liveLo); }
 
   closeCadet() { this.setState({ liveCadet: null }); }
+
+  /* Give a cadet a new password. The hub picks it rather than staff typing one:
+     it is read out across a room under time pressure, so it wants to be short,
+     sayable and not something anyone would choose twice. Shown once, then gone
+     - the hub cannot look it up again any more than it could before. */
+  async giveNewPassword(p) {
+    if (this.state.pwResetBusy) return;
+    const pw = newPassword();
+    this.setState({ pwResetBusy: true, pwResetErr: '' });
+    try {
+      await window.HubData.setCadetPassword(p.id, pw);
+      this.setState({ pwResetBusy: false, pwResetShown: pw, pwResetName: p.display_name });
+    } catch (e) {
+      this.setState({ pwResetBusy: false, pwResetShown: '',
+        pwResetErr: (e && e.message) || String(e) });
+    }
+  }
 
   /* Remove someone for good. Irreversible: the cascades take their handouts,
      progress and attendance with the profile, which is what removing a test
@@ -1681,9 +1726,17 @@ class Component extends DCLogic {
       canRemove: p.id !== (u||{}).id,
       confirming: s.removeId === p.id,
       removeLabel: s.removeBusy ? 'Removing…' : 'Yes, remove them',
-      onRemove: () => this.setState({ removeId: p.id, loadErr: '' }),
+      onRemove: () => this.setState({ removeId: p.id, loadErr: '', pwResetId: null, pwResetShown: '' }),
       onCancelRemove: () => this.setState({ removeId: null }),
       onConfirmRemove: () => this.removePerson(p),
+
+      /* The row only opens the question. Asking it, and showing the answer,
+         both happen in a banner above the list rather than in a panel inside
+         this loop: a button nested in an sc-if inside the sc-for renders but
+         never fires its handler, so the confirm step silently did nothing.
+         The banner sits in the same top-level scope as the error strip, which
+         works. */
+      onNewPassword: () => this.setState({ pwResetId: p.id, pwResetName: p.display_name, pwResetShown: '', pwResetErr: '', removeId: null }),
     }));
 
     /* Everyone on the roster, claimed or not. Showing only the unclaimed made
@@ -1693,7 +1746,11 @@ class Component extends DCLogic {
       const claimed = !!r.claimed_by;
       return {
         service_number: r.service_number, surname: r.surname,
-        intended_staff: !!r.intended_staff,
+        // Only while it is still a plan. Once they have signed up it is no
+        // longer "will be" - whether they are staff is the tickbox in the list
+        // above, which can be changed since, so this badge would go stale and
+        // contradict it.
+        intended_staff: !!r.intended_staff && !claimed,
         statusLabel: claimed ? 'SIGNED UP' : 'NOT SIGNED UP YET',
         statusBg: claimed ? '#ECF3EC' : '#F4F1EA',
         statusCol: claimed ? '#2F5A33' : '#6B6252',
@@ -1946,6 +2003,18 @@ class Component extends DCLogic {
       statTotal: String(cadets.length), statDone: String(statDone),
       statActive: String(statActive), statNone: String(statNone),
       lessonProgress, people, waiting, hasWaiting: waiting.length > 0,
+
+      /* giving a cadet a new password — banner above the People list */
+      pwAsking: !!s.pwResetId && !s.pwResetShown,
+      pwShowing: !!s.pwResetId && !!s.pwResetShown,
+      pwResetName: s.pwResetName, pwResetShown: s.pwResetShown,
+      hasPwResetErr: !!s.pwResetErr, pwResetErr: s.pwResetErr,
+      pwResetLabel: s.pwResetBusy ? 'Working…' : 'Yes, give them a new one',
+      confirmPassword: () => {
+        const p = (s.profiles || []).find(x => x.id === s.pwResetId);
+        if (p) this.giveNewPassword(p);
+      },
+      cancelPassword: () => this.setState({ pwResetId: null, pwResetShown: '', pwResetErr: '' }),
       rosterAll, hasRoster: rosterAll.length > 0,
       rosterSummary: rosterSignedUp + ' of ' + rosterAll.length + ' on the roster have signed up',
 
@@ -2327,6 +2396,21 @@ function saveMessage(e) {
   if (e && e.sessionExpired)
     return 'You have been signed out, so nothing is being saved. Your answers are still on this screen - sign in again in another tab, then come back and touch each answer to save it.';
   return 'Your last change has not been saved. Your answers are still on this screen. Check the squadron WiFi and it will try again as you type.';
+}
+
+/* A password a staff member can say out loud across a classroom and a cadet can
+   type without asking twice. Two words' worth of entropy is not much, so it is
+   a temporary one by design: the cadet changes it under Password, and the hub
+   tells them to. */
+const PW_WORDS = [
+  'Kestrel', 'Falcon', 'Compass', 'Beacon', 'Summit', 'Harrier', 'Meridian', 'Anvil',
+  'Lantern', 'Cobalt', 'Thistle', 'Vector', 'Pennant', 'Bearing', 'Contour', 'Skylark',
+];
+function newPassword() {
+  const a = new Uint32Array(2);
+  if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(a);
+  else { a[0] = Math.floor(Math.random() * 4294967295); a[1] = Math.floor(Math.random() * 4294967295); }
+  return PW_WORDS[a[0] % PW_WORDS.length] + '-' + (1000 + (a[1] % 9000));
 }
 
 function firstWordAfterRank(name) {

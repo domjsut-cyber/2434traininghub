@@ -107,3 +107,29 @@ PUBLISHING ON GITHUB PAGES INSTEAD
 
     Pick one to give the cadets, so nobody is confused about which is "the"
     address. Whichever you pick, test it in a private window first.
+
+
+GIVING A CADET A NEW PASSWORD FROM INSIDE THE HUB
+  People > New password, next to their name. The hub picks a password, shows it
+  to you once, and you tell them. They change it themselves under Password.
+
+  This needs one thing setting up first, because changing somebody else's
+  password requires Supabase's SECRET key - and that key ignores every security
+  rule in hub-schema.sql, so it must never be in a web page. It runs on
+  Supabase's servers instead:
+
+    Supabase > Edge Functions > Deploy a new function
+    Name it exactly:  set-cadet-password
+    Paste in the contents of  supabase/functions/set-cadet-password/index.ts
+    Deploy.
+
+  There is nothing to configure afterwards. Supabase gives the function the keys
+  it needs by itself.
+
+  Until it is deployed the hub says so when you press the button, and you can
+  still set passwords the old way: Supabase > Authentication > Users.
+
+  The function refuses anyone who is not staff. It checks by asking the database
+  who you are, not by believing the request, so a cadet cannot use it whatever
+  they send. It will not change your own password either - use Password at the
+  top of the hub for that, which asks for your current one.

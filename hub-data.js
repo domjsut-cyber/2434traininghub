@@ -499,6 +499,32 @@
           : error.message);
     },
 
+    /* Give a cadet a new password.
+
+       Goes through the set-cadet-password edge function, because doing this
+       needs the SECRET key and that must never be in a browser. The function
+       checks the caller is staff by asking the database, not by believing the
+       request, so a cadet calling it directly is refused whatever they send.
+
+       Until the function is deployed this fails with an explanation rather than
+       a raw error, and staff carry on using the Supabase dashboard. */
+    async setCadetPassword(cadetId, password) {
+      if (!this.isLive()) return { ok: true, display_name: 'demo' };
+      const c = await requireSession();
+      const { data, error } = await c.functions.invoke('set-cadet-password', {
+        body: { cadet_id: cadetId, password },
+      });
+      if (error) {
+        let said = '';
+        try { said = (await error.context.json()).error || ''; } catch (e) {}
+        const status = (error.context && error.context.status) || 0;
+        if (!said && (status === 404 || /not found/i.test(String(error.message || ''))))
+          said = 'The password tool has not been added to this Supabase project yet. Until it is, set the password in Supabase under Authentication > Users. Setting it up is in the publish notes.';
+        throw new Error(said || error.message || 'Could not set that password.');
+      }
+      return data || { ok: true };
+    },
+
     /* ---- register ----
        Who was actually there. Staff only, at the database, not just on screen. */
     async listAttendance(lo) {
